@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-
+from uuid import UUID
 from app.api.dependencies import get_current_user
 from app.database.session import get_db
 from app.models.user import User
@@ -50,20 +50,20 @@ def list_organizations(
     return OrganizationService.get_all(db)
 
 @router.get(
-    "/{organization_id}",
+    "/{organization_public_id}",
     response_model=OrganizationResponse,
 )
 def get_organization(
-    organization_id: int,
+    organization_public_id: UUID,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
 
     try:
-        return OrganizationService.get_by_id(
+        return OrganizationService.get_by_public_id(
             db,
-            organization_id,
-        )
+            organization_public_id,
+        )   
 
     except ValueError as e:
         raise HTTPException(
@@ -72,11 +72,11 @@ def get_organization(
         )
 
 @router.put(
-"/{organization_id}",
+"/{organization_public_id}",
 response_model=OrganizationResponse,
 )
 def update_organization(
-    organization_id: int,
+    organization_public_id: UUID,
     data: OrganizationCreate,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
@@ -85,7 +85,7 @@ def update_organization(
     try:
         return OrganizationService.update(
             db,
-            organization_id,
+            organization_public_id,
             current_user,
             data,
         )
@@ -103,11 +103,11 @@ def update_organization(
         )
 
 @router.delete(
-"/{organization_id}",
+"/{organization_public_id}",
 status_code=204,
 )
 def delete_organization(
-    organization_id: int,
+    organization_public_id: UUID,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -115,7 +115,36 @@ def delete_organization(
     try:
         OrganizationService.delete(
             db,
-            organization_id,
+            organization_public_id,
+            current_user,
+        )
+
+    except ValueError as e:
+        raise HTTPException(
+            status_code=404,
+            detail=str(e),
+        )
+
+    except PermissionError as e:
+        raise HTTPException(
+            status_code=403,
+            detail=str(e),
+        )
+
+@router.post(
+    "/{organization_public_id}/restore",
+    response_model=OrganizationResponse,
+)
+def restore_organization(
+    organization_public_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+
+    try:
+        return OrganizationService.restore(
+            db,
+            organization_public_id,
             current_user,
         )
 

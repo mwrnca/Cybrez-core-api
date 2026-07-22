@@ -79,7 +79,46 @@ class TaskService:
         db: Session,
         task: Task,
     ):
-        TaskRepository.delete(
+        return TaskRepository.delete(
+            db,
+            task,
+        )
+
+    @staticmethod
+    def restore(
+        db: Session,
+        task: Task,
+    ):
+        if task.deleted_at is None:
+            raise ValueError("Task is not deleted")
+
+        return TaskRepository.restore(
+            db,
+            task,
+        )
+
+    @staticmethod
+    def archive(
+        db: Session,
+        task: Task,
+    ):
+        if task.is_archived:
+            raise ValueError("Task is already archived")
+
+        return TaskRepository.archive(
+            db,
+            task,
+        )
+
+    @staticmethod
+    def unarchive(
+        db: Session,
+        task: Task,
+    ):
+        if not task.is_archived:
+            raise ValueError("Task is not archived")
+
+        return TaskRepository.unarchive(
             db,
             task,
         )

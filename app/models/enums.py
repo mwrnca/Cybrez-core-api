@@ -14,7 +14,11 @@ from enum import Enum
 
 class UserRole(str, Enum):
     consumer = "consumer"
+    professional = "professional"
     business = "business"
+    employee = "employee"
+    management = "management"
+    institution = "institution"
     admin = "admin"
 
 
@@ -31,3 +35,5 @@ class TaskPriority(str, Enum):
     medium = "medium"
     high = "high"
     urgent = "urgent"
+
+    

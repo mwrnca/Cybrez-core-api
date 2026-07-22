@@ -5,14 +5,17 @@ from sqlalchemy import (
     Integer,
     String,
     func,
+    ForeignKey,
 )
 from sqlalchemy.orm import relationship
 from sqlalchemy.orm import Mapped, mapped_column
 from app.models.enums import UserRole
 from app.database.base import Base
+from app.models.mixins import SoftDeleteMixin
+import uuid
+from sqlalchemy.dialects.postgresql import UUID
 
-
-class User(Base):
+class User(SoftDeleteMixin, Base):
     __tablename__ = "users"
 
     id: Mapped[int] = mapped_column(
@@ -74,6 +77,7 @@ class User(Base):
     organizations = relationship(
         "Organization",
         back_populates="owner",
+        foreign_keys="Organization.owner_id",
         cascade="all, delete-orphan",
     )
     
@@ -86,6 +90,19 @@ class User(Base):
     assigned_tasks = relationship(
         "Task",
         back_populates="assignee",
+        foreign_keys="Task.assignee_id",
     )
 
-      
+    comments = relationship(
+        "Comment",
+        back_populates="user",
+        foreign_keys="Comment.user_id",
+    )
+
+    public_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        default=uuid.uuid4,
+        unique=True,
+        nullable=False,
+        index=True,
+    )

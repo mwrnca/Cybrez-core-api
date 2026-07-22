@@ -1,6 +1,7 @@
 import secrets
 from datetime import datetime, timedelta, timezone
-
+from app.models.user import User
+from app.services.activity_log_service import ActivityLogService
 from sqlalchemy.orm import Session
 
 from app.models.invitation import Invitation
@@ -60,4 +61,58 @@ class InvitationService:
 
         return invitation
 
-        
+    @staticmethod
+    def cancel(
+        db: Session,
+        invitation: Invitation,
+        current_user: User,
+    ):
+        ActivityLogService.log(
+            db=db,
+            organization_id=invitation.organization_id,
+            user_id=current_user.id,
+            action="invitation_cancelled",
+            target_type="invitation",
+            target_id=invitation.id,
+            description=f"Cancelled invitation for {invitation.email}",
+        )
+
+        InvitationRepository.delete(
+            db,
+            invitation,
+        )
+
+    @staticmethod
+    def resend(
+        db: Session,
+        invitation: Invitation,
+        current_user: User,
+    ):
+        if invitation.accepted:
+            raise ValueError(
+                "Invitation has already been accepted"
+            )
+
+        invitation.token = secrets.token_urlsafe(32)
+
+        invitation.expires_at = (
+            datetime.now(timezone.utc)
+            + timedelta(days=7)
+        )
+
+        invitation = InvitationRepository.update(
+            db,
+            invitation,
+        )
+
+        ActivityLogService.log(
+            db=db,
+            organization_id=invitation.organization_id,
+            user_id=current_user.id,
+            action="invitation_resent",
+            target_type="invitation",
+            target_id=invitation.id,
+            description=f"Resent invitation to {invitation.email}",
+        )
+
+        return invitation

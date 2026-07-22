@@ -1,4 +1,5 @@
 from datetime import datetime
+from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict
 
@@ -17,10 +18,11 @@ class ProjectUpdate(ProjectBase):
 
 
 class ProjectResponse(ProjectBase):
-    id: int
-    organization_id: int
+    public_id: UUID
+    organization_public_id: UUID
     created_at: datetime
     updated_at: datetime
+    is_archived: bool
 
     model_config = ConfigDict(
         from_attributes=True,

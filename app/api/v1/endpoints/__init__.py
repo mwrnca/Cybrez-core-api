@@ -5,5 +5,6 @@ from app.api.v1.endpoints import (
     membership,
     invitation,
     project,
-    task
+    task,
+    activity_log,
 )

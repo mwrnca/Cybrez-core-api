@@ -3,7 +3,8 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.models.user import User
 
 from app.database.base import Base
-
+import uuid
+from sqlalchemy.dialects.postgresql import UUID
 
 class Invitation(Base):
     __tablename__ = "invitations"
@@ -56,4 +57,12 @@ class Invitation(Base):
     organization = relationship(
         "Organization",
         back_populates="invitations",
+    )
+
+    public_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        default=uuid.uuid4,
+        unique=True,
+        nullable=False,
+        index=True,
     )

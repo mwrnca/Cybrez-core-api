@@ -1,15 +1,16 @@
 from datetime import datetime
+from uuid import UUID
+
 from pydantic import BaseModel, ConfigDict
-from app.models.enums import (
-    TaskPriority,
-    TaskStatus,
-)
+
+from app.models.enums import TaskPriority, TaskStatus
+
 
 class TaskBase(BaseModel):
     title: str
     description: str | None = None
-    status: TaskStatus = TaskStatus.todo
-    priority: TaskPriority = TaskPriority.medium
+    status: TaskStatus
+    priority: TaskPriority
     assignee_id: int | None = None
     due_date: datetime | None = None
 
@@ -23,11 +24,10 @@ class TaskUpdate(TaskBase):
 
 
 class TaskResponse(TaskBase):
-    id: int
-    project_id: int
+    public_id: UUID
+    project_public_id: UUID
     created_at: datetime
     updated_at: datetime
+    is_archived: bool
 
-    model_config = ConfigDict(
-        from_attributes=True,
-    )
+    model_config = ConfigDict(from_attributes=True)

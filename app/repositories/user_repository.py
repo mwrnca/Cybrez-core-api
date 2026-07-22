@@ -33,3 +33,13 @@ class UserRepository:
         db.commit()
         db.refresh(user)
         return user
+
+    @staticmethod
+    def get_by_public_id(db, public_id):
+        return (
+            db.query(Organization)
+            .filter(
+                Organization.public_id == public_id
+            )
+            .first()
+        )

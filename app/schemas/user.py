@@ -1,7 +1,7 @@
 from datetime import datetime
 from app.models.enums import UserRole
 from pydantic import BaseModel, ConfigDict, EmailStr
-
+from uuid import UUID
 
 class UserBase(BaseModel):
     email: EmailStr
@@ -18,7 +18,7 @@ class UserLogin(BaseModel):
 
 
 class UserResponse(UserBase):
-    id: int
+    public_id: UUID
     is_active: bool
     is_verified: bool
     is_superuser: bool

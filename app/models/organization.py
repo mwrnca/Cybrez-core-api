@@ -1,15 +1,27 @@
 from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, func
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
+import uuid
+
 from app.database.base import Base
+from app.models.mixins import SoftDeleteMixin
 
 
-class Organization(Base):
+class Organization(SoftDeleteMixin, Base):
     __tablename__ = "organizations"
 
     id: Mapped[int] = mapped_column(
         Integer,
         primary_key=True,
+        index=True,
+    )
+
+    public_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        default=uuid.uuid4,
+        unique=True,
+        nullable=False,
         index=True,
     )
 
@@ -36,7 +48,10 @@ class Organization(Base):
     )
 
     owner_id: Mapped[int] = mapped_column(
-        ForeignKey("users.id", ondelete="CASCADE"),
+        ForeignKey(
+            "users.id",
+            ondelete="CASCADE",
+        ),
         nullable=False,
         index=True,
     )
@@ -55,6 +70,7 @@ class Organization(Base):
     owner = relationship(
         "User",
         back_populates="organizations",
+        foreign_keys=[owner_id],
     )
 
     members = relationship(

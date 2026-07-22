@@ -49,14 +49,14 @@ def create_organization(client, token):
         headers=auth_header(token),
     )
 
-    return response.json()["id"]
+    return response.json()["public_id"]
 
 
 def test_add_member(client):
 
     token = get_token(client)
 
-    organization_id = create_organization(
+    organization_public_id = create_organization(
         client,
         token,
     )
@@ -68,10 +68,10 @@ def test_add_member(client):
     )
 
     response = client.post(
-        f"/api/v1/organizations/{organization_id}/members",
+        f"/api/v1/organizations/{organization_public_id}/members",
         json={
             "user_id": 2,
-            "role": "member",
+            "role": "viewer",
         },
         headers=auth_header(token),
     )
@@ -84,7 +84,7 @@ def test_add_duplicate_member(client):
 
     token = get_token(client)
 
-    organization_id = create_organization(
+    organization_public_id = create_organization(
         client,
         token,
     )
@@ -96,19 +96,19 @@ def test_add_duplicate_member(client):
     )
 
     client.post(
-        f"/api/v1/organizations/{organization_id}/members",
+        f"/api/v1/organizations/{organization_public_id}/members",
         json={
             "user_id": 2,
-            "role": "member",
+            "role": "viewer",
         },
         headers=auth_header(token),
     )
 
     response = client.post(
-        f"/api/v1/organizations/{organization_id}/members",
+        f"/api/v1/organizations/{organization_public_id}/members",
         json={
             "user_id": 2,
-            "role": "member",
+            "role": "viewer",
         },
         headers=auth_header(token),
     )
@@ -120,7 +120,7 @@ def test_list_members(client):
 
     token = get_token(client)
 
-    organization_id = create_organization(
+    organization_public_id = create_organization(
         client,
         token,
     )
@@ -132,21 +132,21 @@ def test_list_members(client):
     )
 
     client.post(
-        f"/api/v1/organizations/{organization_id}/members",
+        f"/api/v1/organizations/{organization_public_id}/members",
         json={
             "user_id": 2,
-            "role": "member",
+            "role": "viewer",
         },
         headers=auth_header(token),
     )
 
     response = client.get(
-        f"/api/v1/organizations/{organization_id}/members",
+        f"/api/v1/organizations/{organization_public_id}/members",
         headers=auth_header(token),
     )
 
     assert response.status_code == 200
-    assert len(response.json()) == 1
+    assert len(response.json()) == 2
 
 
 def test_list_members_invalid_organization(client):
@@ -154,8 +154,126 @@ def test_list_members_invalid_organization(client):
     token = get_token(client)
 
     response = client.get(
-        "/api/v1/organizations/999/members",
+        "/api/v1/organizations/11111111-1111-1111-1111-111111111111/members",
         headers=auth_header(token),
     )
 
     assert response.status_code == 404
+
+def test_remove_member(client):
+
+    token = get_token(client)
+
+    organization_public_id = create_organization(
+        client,
+        token,
+    )
+
+    create_user(
+        client,
+        "member@example.com",
+        "Member",
+    )
+
+    client.post(
+        f"/api/v1/organizations/{organization_public_id}/members",
+        json={
+            "user_id": 2,
+            "role": "viewer",
+        },
+        headers=auth_header(token),
+    )
+
+    response = client.delete(
+        f"/api/v1/organizations/{organization_public_id}/members/2",
+        headers=auth_header(token),
+    )
+
+    assert response.status_code == 204
+
+    response = client.get(
+        f"/api/v1/organizations/{organization_public_id}/members",
+        headers=auth_header(token),
+    )
+
+    assert len(response.json()) == 1
+    assert response.json()[0]["role"] == "owner"
+
+def test_cannot_remove_owner(client):
+
+    token = get_token(client)
+
+    organization_public_id = create_organization(
+        client,
+        token,
+    )
+
+    response = client.delete(
+        f"/api/v1/organizations/{organization_public_id}/members/1",
+        headers=auth_header(token),
+    )
+
+    assert response.status_code == 400
+
+def test_leave_organization(client):
+
+    token = get_token(client)
+
+    organization_public_id = create_organization(
+        client,
+        token,
+    )
+
+    create_user(
+        client,
+        "member@example.com",
+        "Member",
+    )
+
+    client.post(
+        f"/api/v1/organizations/{organization_public_id}/members",
+        json={
+            "user_id": 2,
+            "role": "viewer",
+        },
+        headers=auth_header(token),
+    )
+
+    member_token = client.post(
+        "/api/v1/auth/login",
+        data={
+            "username": "member@example.com",
+            "password": "password123",
+        },
+    ).json()["access_token"]
+
+    response = client.delete(
+        f"/api/v1/organizations/{organization_public_id}/leave",
+        headers=auth_header(member_token),
+    )
+
+    assert response.status_code == 204
+
+    response = client.get(
+        f"/api/v1/organizations/{organization_public_id}/members",
+        headers=auth_header(token),
+    )
+
+    assert len(response.json()) == 1
+    assert response.json()[0]["role"] == "owner"
+
+def test_owner_cannot_leave_organization(client):
+
+    token = get_token(client)
+
+    organization_public_id = create_organization(
+        client,
+        token,
+    )
+
+    response = client.delete(
+        f"/api/v1/organizations/{organization_public_id}/leave",
+        headers=auth_header(token),
+    )
+
+    assert response.status_code == 400

@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
 
+from app.core.soft_delete import soft_delete
 from app.models.project import Project
 
 
@@ -19,12 +20,37 @@ class ProjectRepository:
     def get_by_id(
         db: Session,
         project_id: int,
+        include_deleted: bool = False,
     ):
-        return (
+        query = (
             db.query(Project)
             .filter(Project.id == project_id)
-            .first()
         )
+
+        if not include_deleted:
+            query = query.filter(
+                Project.deleted_at.is_(None)
+            )
+
+        return query.first()
+
+    @staticmethod
+    def get_by_public_id(
+        db: Session,
+        public_id,
+        include_deleted: bool = False,
+    ):
+        query = (
+            db.query(Project)
+            .filter(Project.public_id == public_id)
+        )
+
+        if not include_deleted:
+            query = query.filter(
+                Project.deleted_at.is_(None)
+            )
+
+        return query.first()
 
     @staticmethod
     def get_by_organization(
@@ -34,7 +60,8 @@ class ProjectRepository:
         return (
             db.query(Project)
             .filter(
-                Project.organization_id == organization_id
+                Project.organization_id == organization_id,
+                Project.deleted_at.is_(None),
             )
             .all()
         )
@@ -52,6 +79,51 @@ class ProjectRepository:
     def delete(
         db: Session,
         project: Project,
+        user_id: int | None = None,
     ):
-        db.delete(project)
+        soft_delete(
+            project,
+            user_id,
+        )
+
         db.commit()
+        db.refresh(project)
+
+        return project
+
+    @staticmethod
+    def restore(
+        db: Session,
+        project: Project,
+    ):
+        project.deleted_at = None
+        project.deleted_by = None
+
+        db.commit()
+        db.refresh(project)
+
+        return project
+
+    @staticmethod
+    def archive(
+        db: Session,
+        project: Project,
+    ):
+        project.is_archived = True
+
+        db.commit()
+        db.refresh(project)
+
+        return project
+
+    @staticmethod
+    def unarchive(
+        db: Session,
+        project: Project,
+    ):
+        project.is_archived = False
+
+        db.commit()
+        db.refresh(project)
+
+        return project

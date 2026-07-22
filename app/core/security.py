@@ -38,3 +38,5 @@ def decode_access_token(token: str):
         settings.SECRET_KEY,
         algorithms=[settings.ALGORITHM],
     )
+
+    

@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
-
+from app.services.activity_log_service import ActivityLogService
+from app.core.roles import Roles
 from app.models.membership import Membership
 from app.repositories.membership_repository import MembershipRepository
 
@@ -11,7 +12,7 @@ class MembershipService:
         db: Session,
         organization_id: int,
         user_id: int,
-        role: str = "member",
+        role: str = Roles.VIEWER,
     ):
         existing = MembershipRepository.get_member(
             db,
@@ -22,16 +23,38 @@ class MembershipService:
         if existing:
             raise ValueError("User is already a member")
 
+        valid_roles = {
+            Roles.VIEWER,
+            Roles.EMPLOYEE,
+            Roles.MANAGER,
+            Roles.ADMIN,
+        }
+
+        if role not in valid_roles:
+            raise ValueError("Invalid role")
+
         membership = Membership(
             organization_id=organization_id,
             user_id=user_id,
             role=role,
         )
 
-        return MembershipRepository.create(
+        membership = MembershipRepository.create(
             db,
             membership,
         )
+
+        ActivityLogService.log(
+            db=db,
+            organization_id=organization_id,
+            user_id=user_id,
+            action="member_added",
+            target_type="membership",
+            target_id=membership.id,
+            description=f"Added user {user_id} as {role}",
+        )
+
+        return membership
 
     @staticmethod
     def get_members(
@@ -43,4 +66,87 @@ class MembershipService:
             organization_id,
         )
 
-        
+    @staticmethod
+    def update_role(
+        db: Session,
+        membership: Membership,
+        role: str,
+    ):
+        valid_roles = {
+            Roles.VIEWER,
+            Roles.EMPLOYEE,
+            Roles.MANAGER,
+            Roles.ADMIN,
+        }
+
+        if role not in valid_roles:
+            raise ValueError("Invalid role")
+
+        membership.role = role
+
+        membership = MembershipRepository.update(
+            db,
+            membership,
+        )
+
+        ActivityLogService.log(
+            db=db,
+            organization_id=membership.organization_id,
+            user_id=membership.user_id,
+            action="member_role_updated",
+            target_type="membership",
+            target_id=membership.id,
+            description=f"Changed role to {membership.role}",
+        )
+
+        return membership
+
+    @staticmethod
+    def remove_member(
+        db: Session,
+        membership: Membership,
+    ):
+        if membership.role == Roles.OWNER:
+            raise ValueError(
+                "The owner cannot be removed"
+            )
+
+        ActivityLogService.log(
+            db=db,
+            organization_id=membership.organization_id,
+            user_id=membership.user_id,
+            action="member_removed",
+            target_type="membership",
+            target_id=membership.id,
+            description=f"Removed user {membership.user_id}",
+        )
+
+        MembershipRepository.delete(
+            db,
+            membership,
+        )
+
+    @staticmethod
+    def leave_organization(
+        db: Session,
+        membership: Membership,
+    ):
+        if membership.role == Roles.OWNER:
+            raise ValueError(
+                "The organization owner cannot leave the organization."
+            )
+
+        ActivityLogService.log(
+            db=db,
+            organization_id=membership.organization_id,
+            user_id=membership.user_id,
+            action="member_left",
+            target_type="membership",
+            target_id=membership.id,
+            description=f"User {membership.user_id} left the organization",
+        )
+
+        MembershipRepository.delete(
+            db,
+            membership,
+        )

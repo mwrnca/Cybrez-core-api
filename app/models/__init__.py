@@ -4,6 +4,8 @@ from app.models.membership import Membership
 from app.models.invitation import Invitation
 from app.models.project import Project
 from app.models.task import Task
+from app.models.activity_log import ActivityLog
+from app.models.comment import Comment
 
 __all__ = [
     "User",
@@ -12,4 +14,6 @@ __all__ = [
     "Invitation",
     "Project",
     "Task",
+    "ActivityLog",
+    "Comment",
 ]

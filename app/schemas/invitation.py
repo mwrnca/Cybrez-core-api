@@ -1,5 +1,5 @@
 from datetime import datetime
-
+from uuid import UUID
 from pydantic import BaseModel, ConfigDict, EmailStr
 
 
@@ -9,7 +9,7 @@ class InvitationCreate(BaseModel):
 
 
 class InvitationResponse(BaseModel):
-    id: int
+    public_id: UUID
     organization_id: int
     email: EmailStr
     role: str

@@ -43,7 +43,7 @@ def create_organization(client, token):
         headers=auth_header(token),
     )
 
-    return response.json()["id"]
+    return response.json()["public_id"]
 
 
 def test_create_invitation(client):
@@ -59,19 +59,22 @@ def test_create_invitation(client):
         "owner@example.com",
     )
 
-    organization_id = create_organization(
+    organization_public_id = create_organization(
         client,
         token,
     )
 
     response = client.post(
-        f"/api/v1/invitations/{organization_id}/invite",
+        f"/api/v1/invitations/{organization_public_id}/invite",
         json={
             "email": "invitee@example.com",
-            "role": "member",
+            "role": "viewer",
         },
         headers=auth_header(token),
     )
+
+    print(response.status_code)
+    print(response.json())
 
     assert response.status_code == 200
     assert response.json()["email"] == "invitee@example.com"
@@ -90,16 +93,16 @@ def test_accept_invitation(client, db):
         "owner@example.com",
     )
 
-    organization_id = create_organization(
+    organization_public_id = create_organization(
         client,
         owner_token,
     )
 
     invitation = client.post(
-        f"/api/v1/invitations/{organization_id}/invite",
+        f"/api/v1/invitations/{organization_public_id}/invite",
         json={
             "email": "member@example.com",
-            "role": "member",
+            "role": "viewer",
         },
         headers=auth_header(owner_token),
     ).json()
@@ -158,16 +161,16 @@ def test_accept_expired_invitation(client, db):
         "owner@example.com",
     )
 
-    organization_id = create_organization(
+    organization_public_id = create_organization(
         client,
         owner_token,
     )
 
     invitation = client.post(
-        f"/api/v1/invitations/{organization_id}/invite",
+        f"/api/v1/invitations/{organization_public_id}/invite",
         json={
             "email": "expired@example.com",
-            "role": "member",
+            "role": "viewer",
         },
         headers=auth_header(owner_token),
     ).json()
@@ -215,16 +218,16 @@ def test_accept_same_invitation_twice(client):
         "owner@example.com",
     )
 
-    organization_id = create_organization(
+    organization_public_id = create_organization(
         client,
         owner_token,
     )
 
     invitation = client.post(
-        f"/api/v1/invitations/{organization_id}/invite",
+        f"/api/v1/invitations/{organization_public_id}/invite",
         json={
             "email": "member@example.com",
-            "role": "member",
+            "role": "viewer",
         },
         headers=auth_header(owner_token),
     ).json()
@@ -248,6 +251,166 @@ def test_accept_same_invitation_twice(client):
     response = client.post(
         f"/api/v1/invitations/accept/{invitation['token']}",
         headers=auth_header(member_token),
+    )
+
+    assert response.status_code == 400
+
+def test_cancel_invitation(client):
+
+    create_user(
+        client,
+        "owner@example.com",
+        "Owner",
+    )
+
+    token = login(
+        client,
+        "owner@example.com",
+    )
+
+    organization_public_id = create_organization(
+        client,
+        token,
+    )
+
+    invitation = client.post(
+        f"/api/v1/invitations/{organization_public_id}/invite",
+        json={
+            "email": "invitee@example.com",
+            "role": "viewer",
+        },
+        headers=auth_header(token),
+    ).json()
+
+    response = client.delete(
+        f"/api/v1/invitations/{invitation['public_id']}",
+        headers=auth_header(token),
+    )
+
+    assert response.status_code == 204
+
+def test_cancel_missing_invitation(client):
+
+    create_user(
+        client,
+        "owner@example.com",
+        "Owner",
+    )
+
+    token = login(
+        client,
+        "owner@example.com",
+    )
+
+    response = client.delete(
+        "/api/v1/invitations/11111111-1111-1111-1111-111111111111",
+        headers=auth_header(token),
+    )
+
+    assert response.status_code == 404
+
+def test_resend_invitation(client):
+
+    create_user(
+        client,
+        "owner@example.com",
+        "Owner",
+    )
+
+    owner_token = login(
+        client,
+        "owner@example.com",
+    )
+
+    organization_public_id = create_organization(
+        client,
+        owner_token,
+    )
+
+    invitation = client.post(
+        f"/api/v1/invitations/{organization_public_id}/invite",
+        json={
+            "email": "invitee@example.com",
+            "role": "viewer",
+        },
+        headers=auth_header(owner_token),
+    ).json()
+
+    response = client.post(
+        f"/api/v1/invitations/{invitation['public_id']}/resend",
+        headers=auth_header(owner_token),
+    )
+
+    assert response.status_code == 200
+    assert response.json()["public_id"] == invitation['public_id']
+    assert response.json()["token"] != invitation["token"]
+
+def test_resend_missing_invitation(client):
+
+    create_user(
+        client,
+        "owner@example.com",
+        "Owner",
+    )
+
+    token = login(
+        client,
+        "owner@example.com",
+    )
+
+    response = client.post(
+        "/api/v1/invitations/11111111-1111-1111-1111-111111111111/resend",
+        headers=auth_header(token),
+    )
+
+    assert response.status_code == 404
+
+def test_resend_accepted_invitation(client):
+
+    create_user(
+        client,
+        "owner@example.com",
+        "Owner",
+    )
+
+    owner_token = login(
+        client,
+        "owner@example.com",
+    )
+
+    organization_public_id = create_organization(
+        client,
+        owner_token,
+    )
+
+    invitation = client.post(
+        f"/api/v1/invitations/{organization_public_id}/invite",
+        json={
+            "email": "member@example.com",
+            "role": "viewer",
+        },
+        headers=auth_header(owner_token),
+    ).json()
+
+    create_user(
+        client,
+        "member@example.com",
+        "Member",
+    )
+
+    member_token = login(
+        client,
+        "member@example.com",
+    )
+
+    client.post(
+        f"/api/v1/invitations/accept/{invitation['token']}",
+        headers=auth_header(member_token),
+    )
+
+    response = client.post(
+        f"/api/v1/invitations/{invitation['public_id']}/resend",
+        headers=auth_header(owner_token),
     )
 
     assert response.status_code == 400

@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from sqlalchemy.orm import Session
 
 from app.models.membership import Membership
@@ -44,6 +46,15 @@ class MembershipRepository:
         )
 
     @staticmethod
+    def update(
+        db: Session,
+        membership: Membership,
+    ):
+        db.commit()
+        db.refresh(membership)
+        return membership
+
+    @staticmethod
     def delete(
         db: Session,
         membership: Membership,
@@ -66,4 +77,28 @@ class MembershipRepository:
             .first()
         )
 
-        
+    @staticmethod
+    def get_by_id(
+        db: Session,
+        membership_id: int,
+    ):
+        return (
+            db.query(Membership)
+            .filter(
+                Membership.id == membership_id,
+            )
+            .first()
+        )
+
+    @staticmethod
+    def get_by_public_id(
+        db: Session,
+        public_id: UUID,
+    ):
+        return (
+            db.query(Membership)
+            .filter(
+                Membership.public_id == public_id,
+            )
+            .first()
+        )

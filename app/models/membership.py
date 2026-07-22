@@ -1,8 +1,9 @@
 from datetime import datetime
-
+from app.core.roles import Roles
 from sqlalchemy import DateTime, ForeignKey, Integer, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-
+import uuid
+from sqlalchemy.dialects.postgresql import UUID
 from app.database.base import Base
 
 
@@ -33,7 +34,7 @@ class Membership(Base):
 
     role: Mapped[str] = mapped_column(
         String(50),
-        default="member",
+        default=Roles.VIEWER,
         nullable=False,
     )
 
@@ -50,4 +51,12 @@ class Membership(Base):
     user = relationship(
         "User",
         back_populates="memberships"
+    )
+
+    public_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        default=uuid.uuid4,
+        unique=True,
+        nullable=False,
+        index=True,
     )

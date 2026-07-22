@@ -1,5 +1,4 @@
-from app.core.security import hash_password
-from app.models.user import User
+from uuid import uuid4
 
 
 def get_token(client):
@@ -42,8 +41,19 @@ def organization_payload(
     }
 
 
-def test_create_organization(client):
+def create_organization(client, token):
+    response = client.post(
+        "/api/v1/organizations",
+        json=organization_payload(),
+        headers=auth_header(token),
+    )
 
+    assert response.status_code == 201
+
+    return response.json()["public_id"]
+
+
+def test_create_organization(client):
     token = get_token(client)
 
     response = client.post(
@@ -55,10 +65,10 @@ def test_create_organization(client):
     assert response.status_code == 201
     assert response.json()["name"] == "Cybrez"
     assert response.json()["slug"] == "cybrez"
+    assert "public_id" in response.json()
 
 
 def test_list_organizations(client):
-
     token = get_token(client)
 
     client.post(
@@ -77,7 +87,6 @@ def test_list_organizations(client):
 
 
 def test_get_organization(client):
-
     token = get_token(client)
 
     created = client.post(
@@ -86,19 +95,18 @@ def test_get_organization(client):
         headers=auth_header(token),
     )
 
-    organization_id = created.json()["id"]
+    organization_public_id = created.json()["public_id"]
 
     response = client.get(
-        f"/api/v1/organizations/{organization_id}",
+        f"/api/v1/organizations/{organization_public_id}",
         headers=auth_header(token),
     )
 
     assert response.status_code == 200
-    assert response.json()["id"] == organization_id
+    assert response.json()["public_id"] == organization_public_id
 
 
 def test_update_organization(client):
-
     token = get_token(client)
 
     created = client.post(
@@ -107,10 +115,10 @@ def test_update_organization(client):
         headers=auth_header(token),
     )
 
-    organization_id = created.json()["id"]
+    organization_public_id = created.json()["public_id"]
 
     response = client.put(
-        f"/api/v1/organizations/{organization_id}",
+        f"/api/v1/organizations/{organization_public_id}",
         json=organization_payload(
             name="New Name",
             slug="new-name",
@@ -125,7 +133,6 @@ def test_update_organization(client):
 
 
 def test_delete_organization(client):
-
     token = get_token(client)
 
     created = client.post(
@@ -138,17 +145,17 @@ def test_delete_organization(client):
         headers=auth_header(token),
     )
 
-    organization_id = created.json()["id"]
+    organization_public_id = created.json()["public_id"]
 
     response = client.delete(
-        f"/api/v1/organizations/{organization_id}",
+        f"/api/v1/organizations/{organization_public_id}",
         headers=auth_header(token),
     )
 
     assert response.status_code == 204
 
     response = client.get(
-        f"/api/v1/organizations/{organization_id}",
+        f"/api/v1/organizations/{organization_public_id}",
         headers=auth_header(token),
     )
 
@@ -156,11 +163,12 @@ def test_delete_organization(client):
 
 
 def test_get_nonexistent_organization(client):
-
     token = get_token(client)
 
+    fake_uuid = uuid4()
+
     response = client.get(
-        "/api/v1/organizations/9999",
+        f"/api/v1/organizations/{fake_uuid}",
         headers=auth_header(token),
     )
 
