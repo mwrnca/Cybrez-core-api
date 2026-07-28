@@ -6,6 +6,7 @@ from app.database.session import get_db
 from app.models.user import User
 from app.schemas.organization import (
     OrganizationCreate,
+    OrganizationUpdate,
     OrganizationResponse,
 )
 from app.services.organization_service import OrganizationService
@@ -72,12 +73,12 @@ def get_organization(
         )
 
 @router.put(
-"/{organization_public_id}",
-response_model=OrganizationResponse,
+    "/{organization_public_id}",
+    response_model=OrganizationResponse,
 )
 def update_organization(
     organization_public_id: UUID,
-    data: OrganizationCreate,
+    data: OrganizationUpdate,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):

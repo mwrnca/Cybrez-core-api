@@ -7,11 +7,25 @@ from app.models.user import User
 from app.repositories.organization_repository import (
     OrganizationRepository,
 )
-from app.schemas.organization import OrganizationCreate
+from app.schemas.organization import (
+    OrganizationCreate,
+    OrganizationUpdate,
+)
 from app.services.activity_log_service import ActivityLogService
 from uuid import UUID
+import re
 
 class OrganizationService:
+
+    @staticmethod
+    def generate_slug(name: str) -> str:
+        slug = name.lower()
+
+        slug = re.sub(r"[^a-z0-9\s-]", "", slug)
+        slug = re.sub(r"\s+", "-", slug)
+        slug = re.sub(r"-+", "-", slug)
+
+        return slug.strip("-")
 
     @staticmethod
     def create(
@@ -20,9 +34,11 @@ class OrganizationService:
         data: OrganizationCreate,
     ):
 
+        slug = OrganizationService.generate_slug(data.name)
+
         existing = OrganizationRepository.get_by_slug(
             db,
-            data.slug,
+            slug,
         )
 
         if existing:
@@ -32,7 +48,7 @@ class OrganizationService:
 
         organization = Organization(
             name=data.name,
-            slug=data.slug,
+            slug=slug,
             description=data.description,
             logo_url=data.logo_url,
             owner_id=current_user.id,
@@ -92,7 +108,7 @@ class OrganizationService:
         db: Session,
         organization_id: UUID,
         current_user: User,
-        data: OrganizationCreate,
+        data: OrganizationUpdate,
     ):
         organization = OrganizationRepository.get_by_public_id(
             db, 
@@ -105,10 +121,30 @@ class OrganizationService:
         if organization.owner_id != current_user.id:
             raise PermissionError("You are not the owner")
 
-        organization.name = data.name
-        organization.slug = data.slug
-        organization.description = data.description
-        organization.logo_url = data.logo_url
+        if data.name is not None:
+            slug = OrganizationService.generate_slug(data.name)
+
+            existing = OrganizationRepository.get_by_slug(
+                db,
+                slug,
+            )
+
+            if (
+                existing
+                and existing.id != organization.id
+            ):
+                raise ValueError(
+                    "Organization name already exists."
+                )
+
+            organization.name = data.name
+            organization.slug = slug
+
+        if data.description is not None:
+            organization.description = data.description
+
+        if data.logo_url is not None:
+            organization.logo_url = data.logo_url
 
         organization = OrganizationRepository.update(
             db,
@@ -196,3 +232,4 @@ class OrganizationService:
         )
 
         return organization
+

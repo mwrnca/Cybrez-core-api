@@ -4,7 +4,6 @@ from pydantic import BaseModel, ConfigDict
 
 class OrganizationBase(BaseModel):
     name: str
-    slug: str
     description: str | None = None
     logo_url: str | None = None
 
@@ -22,9 +21,11 @@ class OrganizationUpdate(BaseModel):
 class OrganizationResponse(OrganizationBase):
     public_id: UUID
     owner_id: int
+
+    slug: str
+
     created_at: datetime
     updated_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
-
     
