@@ -77,3 +77,7 @@ class Comment(SoftDeleteMixin, Base):
         nullable=False,
         index=True,
     )
+
+    @property
+    def task_public_id(self):
+        return self.task.public_id

@@ -78,12 +78,15 @@ class CommentRepository:
     def get_by_public_id(
         db: Session,
         public_id,
+        include_deleted: bool = False,
     ):
-        return (
-            db.query(Comment)
-            .filter(
-                Comment.public_id == public_id,
+        query = db.query(Comment).filter(
+            Comment.public_id == public_id,
+        )
+
+        if not include_deleted:
+            query = query.filter(
                 Comment.deleted_at.is_(None),
             )
-            .first()
-        )
+
+        return query.first()

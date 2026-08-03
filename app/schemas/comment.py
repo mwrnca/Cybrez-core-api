@@ -17,7 +17,7 @@ class CommentUpdate(CommentBase):
 
 class CommentResponse(CommentBase):
     public_id: UUID
-    task_id: int
+    task_public_id: UUID
     user_id: int
     created_at: datetime
     updated_at: datetime

@@ -2,7 +2,9 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-
+from app.schemas.activity_log import (
+    ActivityLogResponse,
+)
 from app.api.dependencies import get_current_user
 from app.database.session import get_db
 from app.models.user import User
@@ -19,7 +21,10 @@ router = APIRouter(
 )
 
 
-@router.get("/{organization_public_id}")
+@router.get(
+    "/{organization_public_id}",
+    response_model=list[ActivityLogResponse],
+)
 def list_activity_logs(
     organization_public_id: UUID,
     db: Session = Depends(get_db),

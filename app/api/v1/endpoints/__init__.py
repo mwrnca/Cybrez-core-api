@@ -6,5 +6,7 @@ from app.api.v1.endpoints import (
     invitation,
     project,
     task,
+    comment,
     activity_log,
+    notification,
 )

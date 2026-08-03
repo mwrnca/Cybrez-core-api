@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
@@ -22,19 +24,19 @@ router = APIRouter(
 
 
 @router.post(
-    "/task/{task_id}",
+    "/task/{task_public_id}",
     response_model=CommentResponse,
     status_code=status.HTTP_201_CREATED,
 )
 def create_comment(
-    task_id: int,
+    task_public_id: UUID,
     data: CommentCreate,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    task = TaskRepository.get_by_id(
+    task = TaskRepository.get_by_public_id(
         db,
-        task_id,
+        task_public_id,
     )
 
     if task is None:
@@ -47,7 +49,7 @@ def create_comment(
         db,
         task.project.organization_id,
         current_user,
-        Roles.MEMBER,
+        Roles.EMPLOYEE,
     )
 
     return CommentService.create(
@@ -59,17 +61,17 @@ def create_comment(
 
 
 @router.get(
-    "/task/{task_id}",
+    "/task/{task_public_id}",
     response_model=list[CommentResponse],
 )
 def list_comments(
-    task_id: int,
+    task_public_id: UUID,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    task = TaskRepository.get_by_id(
+    task = TaskRepository.get_by_public_id(
         db,
-        task_id,
+        task_public_id,
     )
 
     if task is None:
@@ -82,28 +84,28 @@ def list_comments(
         db,
         task.project.organization_id,
         current_user,
-        Roles.MEMBER,
+        Roles.EMPLOYEE,
     )
 
     return CommentService.get_all(
         db,
-        task_id,
+        task.id,
     )
 
 
 @router.put(
-    "/{comment_id}",
+    "/{comment_public_id}",
     response_model=CommentResponse,
 )
 def update_comment(
-    comment_id: int,
+    comment_public_id: UUID,
     data: CommentUpdate,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    comment = CommentRepository.get_by_id(
+    comment = CommentRepository.get_by_public_id(
         db,
-        comment_id,
+        comment_public_id,
     )
 
     if comment is None:
@@ -127,17 +129,17 @@ def update_comment(
 
 
 @router.delete(
-    "/{comment_id}",
+    "/{comment_public_id}",
     status_code=status.HTTP_204_NO_CONTENT,
 )
 def delete_comment(
-    comment_id: int,
+    comment_public_id: UUID,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    comment = CommentRepository.get_by_id(
+    comment = CommentRepository.get_by_public_id(
         db,
-        comment_id,
+        comment_public_id,
     )
 
     if comment is None:
@@ -160,17 +162,17 @@ def delete_comment(
 
 
 @router.post(
-    "/{comment_id}/restore",
+    "/{comment_public_id}/restore",
     response_model=CommentResponse,
 )
 def restore_comment(
-    comment_id: int,
+    comment_public_id: UUID,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    comment = CommentRepository.get_by_id(
+    comment = CommentRepository.get_by_public_id(
         db,
-        comment_id,
+        comment_public_id,
         include_deleted=True,
     )
 

@@ -99,6 +99,12 @@ class User(SoftDeleteMixin, Base):
         foreign_keys="Comment.user_id",
     )
 
+    notifications = relationship(
+        "Notification",
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
+
     public_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
         default=uuid.uuid4,
