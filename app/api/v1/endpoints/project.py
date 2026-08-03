@@ -119,6 +119,28 @@ def update_project(
         data,
     )
 
+@router.get(
+    "/{project_public_id}",
+    response_model=ProjectResponse,
+)
+def get_project(
+    project_public_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    project = ProjectRepository.get_by_public_id(
+        db,
+        project_public_id,
+    )
+
+    if project is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Project not found",
+        )
+
+    return project
+
 
 @router.delete(
     "/{project_public_id}",

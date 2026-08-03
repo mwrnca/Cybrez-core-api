@@ -92,6 +92,33 @@ def list_tasks(
         project.id,
     )
 
+@router.get(
+    "/tasks/{task_public_id}",
+    response_model=TaskResponse,
+)
+def get_task(
+    task_public_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    task = TaskRepository.get_by_public_id(
+        db,
+        task_public_id,
+    )
+
+    if task is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Task not found",
+        )
+
+    require_owner(
+        task.project.organization,
+        current_user,
+    )
+
+    return task
+
 
 @router.put(
     "/tasks/{task_public_id}",
