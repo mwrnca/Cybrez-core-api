@@ -13,7 +13,7 @@ from app.api.v1.endpoints import (
     dashboard,
     notification,
 )
-
+from app.api.v1.endpoints import search
 api_router = APIRouter()
 
 api_router.include_router(auth.router)
@@ -27,3 +27,4 @@ api_router.include_router(comment.router)
 api_router.include_router(activity_log.router)
 api_router.include_router(dashboard.router)
 api_router.include_router(notification.router)
+api_router.include_router(search.router)
