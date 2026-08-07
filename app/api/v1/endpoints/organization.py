@@ -11,6 +11,13 @@ from app.schemas.organization import (
 )
 from app.services.organization_service import OrganizationService
 
+from app.schemas.organization_overview import (
+    OrganizationOverviewResponse,
+)
+from app.services.organization_overview_service import (
+    OrganizationOverviewService,
+)
+
 router = APIRouter(
     prefix="/organizations",
     tags=["Organizations"],
@@ -160,3 +167,18 @@ def restore_organization(
             status_code=403,
             detail=str(e),
         )
+
+@router.get(
+    "/{organization_public_id}/overview",
+    response_model=OrganizationOverviewResponse,
+)
+def get_organization_overview(
+    organization_public_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    return OrganizationOverviewService.get_overview(
+        db,
+        organization_public_id,
+        current_user,
+    )

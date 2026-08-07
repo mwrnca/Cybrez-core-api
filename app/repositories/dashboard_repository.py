@@ -1,48 +1,106 @@
 from sqlalchemy import func
 from sqlalchemy.orm import Session
+
 from app.models.enums import TaskStatus
+from app.models.membership import Membership
 from app.models.organization import Organization
 from app.models.project import Project
 from app.models.task import Task
-from app.models.membership import Membership
 
 
 class DashboardRepository:
 
     @staticmethod
-    def get_stats(db: Session):
+    def get_stats(
+        db: Session,
+        organization_id: int | None = None,
+    ):
+        organizations = db.query(
+            func.count(Organization.id)
+        ).scalar()
 
-        organizations = db.query(func.count(Organization.id)).scalar()
+        projects_query = db.query(Project)
 
-        projects = db.query(func.count(Project.id)).scalar()
+        if organization_id is not None:
+            projects_query = projects_query.filter(
+                Project.organization_id == organization_id
+            )
 
-        active_projects = (
-            db.query(func.count(Project.id))
-            .filter(Project.is_archived == False)
-            .scalar()
+        projects = projects_query.count()
+
+        active_query = db.query(Project).filter(
+            Project.is_archived == False
         )
 
-        archived_projects = (
-            db.query(func.count(Project.id))
-            .filter(Project.is_archived == True)
-            .scalar()
+        if organization_id is not None:
+            active_query = active_query.filter(
+                Project.organization_id == organization_id
+            )
+
+        active_projects = active_query.count()
+
+        archived_query = db.query(Project).filter(
+            Project.is_archived == True
         )
 
-        tasks = db.query(func.count(Task.id)).scalar()
+        if organization_id is not None:
+            archived_query = archived_query.filter(
+                Project.organization_id == organization_id
+            )
 
-        completed_tasks = (
-            db.query(func.count(Task.id))
-            .filter(Task.status == TaskStatus.done)
-            .scalar()
+        archived_projects = archived_query.count()
+
+        tasks_query = db.query(Task)
+
+        if organization_id is not None:
+            tasks_query = (
+                tasks_query
+                .join(Project)
+                .filter(
+                    Project.organization_id == organization_id
+                )
+            )
+
+        tasks = tasks_query.count()
+
+        completed_query = db.query(Task).filter(
+            Task.status == TaskStatus.done
         )
 
-        pending_tasks = (
-            db.query(func.count(Task.id))
-            .filter(Task.status != TaskStatus.done)
-            .scalar()
+        if organization_id is not None:
+            completed_query = (
+                completed_query
+                .join(Project)
+                .filter(
+                    Project.organization_id == organization_id
+                )
+            )
+
+        completed_tasks = completed_query.count()
+
+        pending_query = db.query(Task).filter(
+            Task.status != TaskStatus.done
         )
 
-        members = db.query(func.count(Membership.id)).scalar()
+        if organization_id is not None:
+            pending_query = (
+                pending_query
+                .join(Project)
+                .filter(
+                    Project.organization_id == organization_id
+                )
+            )
+
+        pending_tasks = pending_query.count()
+
+        members_query = db.query(Membership)
+
+        if organization_id is not None:
+            members_query = members_query.filter(
+                Membership.organization_id == organization_id
+            )
+
+        members = members_query.count()
 
         return {
             "organizations": organizations,
@@ -56,7 +114,7 @@ class DashboardRepository:
         }
 
     @staticmethod
-    def tasks_by_status(db):
+    def tasks_by_status(db: Session):
         rows = (
             db.query(
                 Task.status,
@@ -66,13 +124,16 @@ class DashboardRepository:
             .all()
         )
 
-        return {
-            status.value if hasattr(status, "value") else status: count
+        return [
+            {
+                "status": status.value if hasattr(status, "value") else status,
+                "count": count,
+            }
             for status, count in rows
-        }
+        ]
 
     @staticmethod
-    def project_counts(db):
+    def project_counts(db: Session):
         active = (
             db.query(Project)
             .filter(Project.is_archived == False)
@@ -85,13 +146,19 @@ class DashboardRepository:
             .count()
         )
 
-        return {
-            "active": active,
-            "archived": archived,
-        }
+        return [
+            {
+                "status": "active",
+                "count": active,
+            },
+            {
+                "status": "archived",
+                "count": archived,
+            },
+        ]
 
     @staticmethod
-    def tasks_per_month(db):
+    def tasks_per_month(db: Session):
         rows = (
             db.query(
                 func.to_char(

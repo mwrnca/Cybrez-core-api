@@ -15,10 +15,11 @@ class MembershipCreate(MembershipBase):
 class MembershipRoleUpdate(BaseModel):
     role: str
     
-class MembershipResponse(MembershipBase):
+class MembershipResponse(BaseModel):
     public_id: UUID
     organization_id: int
     user_id: int
+    role: str
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
