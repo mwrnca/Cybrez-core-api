@@ -25,7 +25,7 @@ router = APIRouter(
 
 
 @router.post(
-    "",
+    "/",
     response_model=OrganizationResponse,
     status_code=status.HTTP_201_CREATED,
 )
