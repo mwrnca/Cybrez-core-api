@@ -4,7 +4,6 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.api.dependencies import get_current_user
 from app.core.permissions import (
-    require_owner,
     require_role,
 )
 from app.core.roles import Roles
@@ -47,9 +46,11 @@ def create_project(
             detail="Organization not found",
         )
 
-    require_owner(
-        organization,
+    require_role(
+        db,
+        organization.id,
         current_user,
+        Roles.MANAGER,
     )
 
     return ProjectService.create(
@@ -107,9 +108,11 @@ def update_project(
             detail="Project not found",
         )
 
-    require_owner(
-        project.organization,
+    require_role(
+        db,
+        project.organization_id,
         current_user,
+        Roles.MANAGER,
     )
 
     return ProjectService.update(
@@ -162,9 +165,11 @@ def delete_project(
             detail="Project not found",
         )
 
-    require_owner(
-        project.organization,
+    require_role(
+        db,
+        project.organization_id,
         current_user,
+        Roles.ADMIN,
     )
 
     ProjectService.delete(
