@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.models.task import Task
 from app.api.dependencies import get_current_user
-from app.core.permissions import require_owner
+
 from app.database.session import get_db
 from app.models.user import User
 from app.repositories.project_repository import ProjectRepository
@@ -12,6 +12,8 @@ from app.schemas.task import (
     TaskUpdate,
     TaskResponse,
 )
+from app.core.permissions import require_role
+from app.core.roles import Roles
 from app.services.task_service import TaskService
 from uuid import UUID
 
@@ -43,9 +45,11 @@ def create_task(
             detail="Project not found",
         )
 
-    require_owner(
-        project.organization,
+    require_role(
+        db,
+        project.organization_id,
         current_user,
+        Roles.MANAGER,
     )
 
     try:
@@ -82,9 +86,11 @@ def list_tasks(
             detail="Project not found",
         )
 
-    require_owner(
-        project.organization,
+    require_role(
+        db,
+        project.organization_id,
         current_user,
+        Roles.MANAGER,
     )
 
     return TaskService.get_all(
@@ -112,9 +118,11 @@ def get_task(
             detail="Task not found",
         )
 
-    require_owner(
-        task.project.organization,
+    require_role(
+        db, 
+        task.project.organization_id,
         current_user,
+            Roles.MANAGER,
     )
 
     return task
@@ -142,10 +150,12 @@ def update_task(
             detail="Task not found",
         )
 
-    require_owner(
-        task.project.organization,
-        current_user,
-    )
+    require_role(
+    db,
+    task.project.organization_id,
+    current_user,
+    Roles.MANAGER,
+)
 
     try:
         return TaskService.update(
@@ -183,14 +193,17 @@ def delete_task(
             detail="Task not found",
         )
 
-    require_owner(
-        task.project.organization,
-        current_user,
-    )
+    require_role(
+    db,
+    task.project.organization_id,
+    current_user,
+    Roles.ADMIN,
+)
 
     TaskService.delete(
         db,
         task,
+        current_user,
     )
 
 @router.post(
@@ -214,10 +227,12 @@ def restore_task(
             detail="Task not found",
         )
 
-    require_owner(
-        task.project.organization,
-        current_user,
-    )
+    require_role(
+    db,
+    task.project.organization_id,
+    current_user,
+    Roles.MANAGER,
+)
 
     try:
         return TaskService.restore(
@@ -252,9 +267,11 @@ def archive_task(
             detail="Task not found",
         )
 
-    require_owner(
-        task.project.organization,
+    require_role(
+        db,
+        task.project.organization_id,
         current_user,
+        Roles.MANAGER,
     )
 
     try:
@@ -290,9 +307,11 @@ def unarchive_task(
             detail="Task not found",
         )
 
-    require_owner(
-        task.project.organization,
+    require_role(
+        db,
+        task.project.organization_id,
         current_user,
+        Roles.MANAGER,
     )
 
     try:

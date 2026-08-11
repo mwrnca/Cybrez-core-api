@@ -11,4 +11,16 @@ class DashboardStats(BaseModel):
     pending_tasks: int
     members: int
 
-    
+class TasksByStatus(BaseModel):
+    status: str
+    count: int
+
+
+class ProjectCount(BaseModel):
+    status: str
+    count: int
+
+
+class TasksPerMonth(BaseModel):
+    month: str
+    count: int

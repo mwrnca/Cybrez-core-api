@@ -28,7 +28,7 @@ class OrganizationOverviewService:
             organization_public_id,
         )
 
-        stats = DashboardRepository.get_stats(
+        stats = DashboardRepository.get_organization_stats(
             db,
             organization.id,
         )

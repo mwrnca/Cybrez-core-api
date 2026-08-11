@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-
+from app.models.user import User
 from app.models.project import Project
 from app.models.task import Task
 from app.repositories.task_repository import TaskRepository
@@ -74,14 +74,15 @@ class TaskService:
             task,
         )
         
-    @staticmethod
     def delete(
         db: Session,
         task: Task,
+        current_user: User,
     ):
         return TaskRepository.delete(
             db,
             task,
+            current_user.id,
         )
 
     @staticmethod
