@@ -13,7 +13,7 @@ class DashboardService:
     ):
         return DashboardRepository.get_stats(
             db,
-            current_user.id,
+            current_user.public_id,
         )
 
     @staticmethod
@@ -23,7 +23,7 @@ class DashboardService:
     ):
         return DashboardRepository.tasks_by_status(
             db,
-            current_user.id,
+            current_user.public_id,
         )
 
     @staticmethod
@@ -33,7 +33,7 @@ class DashboardService:
     ):
         return DashboardRepository.project_counts(
             db,
-            current_user.id,
+            current_user.public_id,
         )
 
     @staticmethod
@@ -43,5 +43,5 @@ class DashboardService:
     ):
         return DashboardRepository.tasks_per_month(
             db,
-            current_user.id,
+            current_user.public_id,
         )

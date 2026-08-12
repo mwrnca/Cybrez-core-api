@@ -71,7 +71,7 @@ class MembershipRepository:
     @staticmethod
     def get_by_id(
         db: Session,
-        membership_id: int,
+        membership_id: UUID
     ):
         return (
             db.query(Membership)

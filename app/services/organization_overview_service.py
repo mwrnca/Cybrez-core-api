@@ -30,7 +30,7 @@ class OrganizationOverviewService:
 
         stats = DashboardRepository.get_organization_stats(
             db,
-            organization.id,
+            organization.public_id,
         )
 
         recent_activity = ActivityLogRepository.get_by_organization(

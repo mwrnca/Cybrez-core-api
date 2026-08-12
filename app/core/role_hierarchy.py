@@ -1,6 +1,7 @@
-class Roles:
-    OWNER = "owner"
-    ADMIN = "admin"
-    MANAGER = "manager"
-    EMPLOYEE = "employee"
-    VIEWER = "viewer"
+ROLE_HIERARCHY = {
+    "viewer": 1,
+    "employee": 2,
+    "manager": 3,
+    "admin": 4,
+    "owner": 5,
+}

@@ -2,8 +2,8 @@ from uuid import UUID
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
-from jose import JWTError
 from sqlalchemy.orm import Session
+from jose import JWTError
 
 from app.database.session import get_db
 from app.models.user import User
@@ -28,7 +28,8 @@ def get_current_user(
     try:
         payload = decode_access_token(token)
         user_public_id = UUID(payload["sub"])
-    except (JWTError, ValueError, KeyError):
+
+    except (JWTError, KeyError, ValueError):
         raise credentials_exception
 
     user = (

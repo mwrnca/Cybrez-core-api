@@ -51,7 +51,7 @@ class OrganizationService:
             slug=slug,
             description=data.description,
             logo_url=data.logo_url,
-            owner_id=current_user.id,
+            owner_id=current_user.public_id,
         )
 
         organization = OrganizationRepository.create(
@@ -60,8 +60,8 @@ class OrganizationService:
         )
 
         membership = Membership(
-            organization_id=organization.id,
-            user_id=current_user.id,
+            organization_id=organization.public_id,
+            user_id=current_user.public_id,
             role=Roles.OWNER,
         )
 
@@ -118,7 +118,7 @@ class OrganizationService:
         if organization is None:
             raise ValueError("Organization not found")
 
-        if organization.owner_id != current_user.id:
+        if organization.owner_id != current_user.public_id:
             raise PermissionError("You are not the owner")
 
         if data.name is not None:
@@ -177,7 +177,7 @@ class OrganizationService:
         if organization is None:
             raise ValueError("Organization not found")
 
-        if organization.owner_id != current_user.id:
+        if organization.owner_id != current_user.public_id:
             raise PermissionError("You are not the owner")
 
         OrganizationRepository.delete(
@@ -213,7 +213,7 @@ class OrganizationService:
         if organization.deleted_at is None:
             raise ValueError("Organization is not deleted")
 
-        if organization.owner_id != current_user.id:
+        if organization.owner_id != current_user.public_id:
             raise PermissionError("You are not the owner")
 
         organization = OrganizationRepository.restore(
@@ -232,4 +232,3 @@ class OrganizationService:
         )
 
         return organization
-

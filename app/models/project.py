@@ -25,11 +25,9 @@ class Project(SoftDeleteMixin, Base):
         index=True,
     )
 
-    organization_id: Mapped[int] = mapped_column(
-        ForeignKey(
-            "organizations.id",
-            ondelete="CASCADE",
-        ),
+    organization_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("organizations.public_id", ondelete="CASCADE"),
         nullable=False,
         index=True,
     )

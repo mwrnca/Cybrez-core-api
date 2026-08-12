@@ -22,7 +22,7 @@ class ProjectService:
         data: ProjectCreate,
     ):
         project = Project(
-            organization_id=organization.id,
+            organization_id=organization.public_id,
             name=data.name,
             description=data.description,
         )
@@ -47,7 +47,7 @@ class ProjectService:
     @staticmethod
     def get_all(
         db: Session,
-        organization_id: int,
+        organization_id,
     ):
         return ProjectRepository.get_by_organization(
             db,
@@ -74,7 +74,7 @@ class ProjectService:
 
         ActivityLogService.log(
             db=db,
-            organization_id=project.organization_id,
+            organization_id=project.organization.id,
             user_id=current_user.id,
             action="project_updated",
             target_type="project",
@@ -90,6 +90,8 @@ class ProjectService:
         project: Project,
         current_user: User,
     ):
+        organization_int_id = project.organization.id
+
         ProjectRepository.delete(
             db,
             project,
@@ -98,7 +100,7 @@ class ProjectService:
 
         ActivityLogService.log(
             db=db,
-            organization_id=project.organization_id,
+            organization_id=organization_int_id,
             user_id=current_user.id,
             action="project_deleted",
             target_type="project",
@@ -122,7 +124,7 @@ class ProjectService:
 
         ActivityLogService.log(
             db=db,
-            organization_id=project.organization_id,
+            organization_id=project.organization.id,
             user_id=current_user.id,
             action="project_restored",
             target_type="project",
@@ -148,7 +150,7 @@ class ProjectService:
 
         ActivityLogService.log(
             db=db,
-            organization_id=project.organization_id,
+            organization_id=project.organization.id,
             user_id=current_user.id,
             action="project_archived",
             target_type="project",
@@ -174,7 +176,7 @@ class ProjectService:
 
         ActivityLogService.log(
             db=db,
-            organization_id=project.organization_id,
+            organization_id=project.organization.id,
             user_id=current_user.id,
             action="project_unarchived",
             target_type="project",

@@ -20,7 +20,7 @@ class OrganizationUpdate(BaseModel):
 
 class OrganizationResponse(OrganizationBase):
     public_id: UUID
-    owner_id: int
+    owner_id: UUID
 
     slug: str
 

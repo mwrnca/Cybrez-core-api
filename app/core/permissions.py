@@ -7,6 +7,8 @@ from app.models.organization import Organization
 from app.models.user import User
 from app.repositories.membership_repository import MembershipRepository
 
+from uuid import UUID
+
 def require_role(
     db: Session,
     organization_public_id: UUID,

@@ -2,6 +2,8 @@ from sqlalchemy.orm import Session
 from app.services.activity_log_service import ActivityLogService
 from app.core.roles import Roles
 from app.models.membership import Membership
+from app.models.user import User
+from app.models.organization import Organization
 from app.repositories.membership_repository import MembershipRepository
 from uuid import UUID
 
@@ -44,10 +46,13 @@ class MembershipService:
             membership,
         )
 
+        org = db.query(Organization).filter(Organization.public_id == organization_id).first()
+        user = db.query(User).filter(User.public_id == user_id).first()
+
         ActivityLogService.log(
             db=db,
-            organization_id=organization_id,
-            user_id=user_id,
+            organization_id=org.id,
+            user_id=user.id,
             action="member_added",
             target_type="membership",
             target_id=membership.id,
@@ -89,10 +94,13 @@ class MembershipService:
             membership,
         )
 
+        org = db.query(Organization).filter(Organization.public_id == membership.organization_id).first()
+        user = db.query(User).filter(User.public_id == membership.user_id).first()
+
         ActivityLogService.log(
             db=db,
-            organization_id=membership.organization_id,
-            user_id=membership.user_id,
+            organization_id=org.id,
+            user_id=user.id,
             action="member_role_updated",
             target_type="membership",
             target_id=membership.id,
@@ -111,10 +119,13 @@ class MembershipService:
                 "The owner cannot be removed"
             )
 
+        org = db.query(Organization).filter(Organization.public_id == membership.organization_id).first()
+        user = db.query(User).filter(User.public_id == membership.user_id).first()
+
         ActivityLogService.log(
             db=db,
-            organization_id=membership.organization_id,
-            user_id=membership.user_id,
+            organization_id=org.id,
+            user_id=user.id,
             action="member_removed",
             target_type="membership",
             target_id=membership.id,
@@ -136,10 +147,13 @@ class MembershipService:
                 "The organization owner cannot leave the organization."
             )
 
+        org = db.query(Organization).filter(Organization.public_id == membership.organization_id).first()
+        user = db.query(User).filter(User.public_id == membership.user_id).first()
+
         ActivityLogService.log(
             db=db,
-            organization_id=membership.organization_id,
-            user_id=membership.user_id,
+            organization_id=org.id,
+            user_id=user.id,
             action="member_left",
             target_type="membership",
             target_id=membership.id,

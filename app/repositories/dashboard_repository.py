@@ -1,3 +1,4 @@
+from uuid import UUID
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
@@ -13,11 +14,11 @@ class DashboardRepository:
     @staticmethod
     def get_organization_stats(
         db: Session,
-        organization_id: int,
+        organization_id: UUID,
     ):
         organizations = (
             db.query(func.count(Organization.id))
-            .filter(Organization.id == organization_id)
+            .filter(Organization.public_id == organization_id)
             .scalar()
         )
 
@@ -25,7 +26,7 @@ class DashboardRepository:
             db.query(func.count(Project.id))
             .filter(Project.organization_id == organization_id)
             .scalar()
-    )   
+        )
 
         active_projects = (
             db.query(func.count(Project.id))
@@ -89,22 +90,22 @@ class DashboardRepository:
             "completed_tasks": completed_tasks or 0,
             "pending_tasks": pending_tasks or 0,
             "members": members or 0,
-        }   
+        }
 
     @staticmethod
     def get_stats(
         db: Session,
-        user_id: int,
+        user_id: UUID,
     ):
         organization_ids = (
             db.query(Membership.organization_id)
             .filter(Membership.user_id == user_id)
             .subquery()
-        )   
+        )
 
         organizations = (
             db.query(func.count(Organization.id))
-            .filter(Organization.id.in_(organization_ids))
+            .filter(Organization.public_id.in_(organization_ids))
             .scalar()
         )
 
@@ -179,7 +180,7 @@ class DashboardRepository:
     @staticmethod
     def tasks_by_status(
         db: Session,
-        user_id: int,
+        user_id: UUID,
     ):
         organization_ids = (
             db.query(Membership.organization_id)
@@ -188,17 +189,17 @@ class DashboardRepository:
         )
 
         rows = (
-        db.query(
-            Task.status,
-            func.count(Task.id),
+            db.query(
+                Task.status,
+                func.count(Task.id),
+            )
+            .join(Project)
+            .filter(
+                Project.organization_id.in_(organization_ids)
+            )
+            .group_by(Task.status)
+            .all()
         )
-        .join(Project)
-        .filter(
-            Project.organization_id.in_(organization_ids)
-        )
-        .group_by(Task.status)
-        .all()
-    )
 
         return [
             {
@@ -211,7 +212,7 @@ class DashboardRepository:
     @staticmethod
     def project_counts(
         db: Session,
-        user_id: int,
+        user_id: UUID,
     ):
         organization_ids = (
             db.query(Membership.organization_id)
@@ -238,20 +239,14 @@ class DashboardRepository:
         )
 
         return [
-            {
-                "status": "active",
-                "count": active,
-            },
-            {
-                "status": "archived",
-                "count": archived,
-            },
+            {"status": "active", "count": active},
+            {"status": "archived", "count": archived},
         ]
 
     @staticmethod
     def tasks_per_month(
         db: Session,
-        user_id: int,
+        user_id: UUID,
     ):
         organization_ids = (
             db.query(Membership.organization_id)
@@ -277,9 +272,6 @@ class DashboardRepository:
         )
 
         return [
-            {
-                "month": month,
-                "count": count,
-            }
+            {"month": month, "count": count}
             for month, count in rows
         ]

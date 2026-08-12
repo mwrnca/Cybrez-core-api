@@ -48,7 +48,7 @@ def create_project(
 
     require_role(
         db,
-        organization.id,
+        organization.public_id,
         current_user,
         Roles.MANAGER,
     )
@@ -83,7 +83,7 @@ def list_projects(
 
     return ProjectService.get_all(
         db,
-        organization.id,
+        organization.public_id,
     )
 
 
@@ -204,7 +204,7 @@ def restore_project(
 
     require_role(
         db,
-        organization.id,
+        organization.public_id,
         current_user,
         Roles.MANAGER,
     )

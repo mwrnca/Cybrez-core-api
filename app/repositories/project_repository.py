@@ -1,3 +1,4 @@
+from uuid import UUID
 from sqlalchemy.orm import Session
 
 from app.core.soft_delete import soft_delete
@@ -55,7 +56,7 @@ class ProjectRepository:
     @staticmethod
     def get_by_organization(
         db: Session,
-        organization_id: int,
+        organization_id: UUID,
     ):
         return (
             db.query(Project)
