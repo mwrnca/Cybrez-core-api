@@ -1,10 +1,12 @@
-from datetime import datetime
-from app.core.roles import Roles
-from sqlalchemy import DateTime, ForeignKey, Integer, String, func
-from sqlalchemy.orm import Mapped, mapped_column, relationship
 import uuid
+from datetime import datetime
+
+from sqlalchemy import DateTime, ForeignKey, Integer, String, func
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
 from app.database.base import Base
+from app.core.roles import Roles
 
 
 class Membership(Base):
@@ -16,19 +18,23 @@ class Membership(Base):
         index=True,
     )
 
-    organization_id: Mapped[int] = mapped_column(
-        ForeignKey(
-            "organizations.id",
-            ondelete="CASCADE",
-        ),
+    public_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        default=uuid.uuid4,
+        unique=True,
+        nullable=False,
+        index=True,
+    )
+
+    organization_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("organizations.public_id", ondelete="CASCADE"),
         nullable=False,
     )
 
-    user_id: Mapped[int] = mapped_column(
-        ForeignKey(
-            "users.id",
-            ondelete="CASCADE",
-        ),
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("users.public_id", ondelete="CASCADE"),
         nullable=False,
     )
 
@@ -45,18 +51,10 @@ class Membership(Base):
 
     organization = relationship(
         "Organization",
-        back_populates="members"
+        back_populates="members",
     )
 
     user = relationship(
         "User",
-        back_populates="memberships"
-    )
-
-    public_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
-        default=uuid.uuid4,
-        unique=True,
-        nullable=False,
-        index=True,
+        back_populates="memberships",
     )

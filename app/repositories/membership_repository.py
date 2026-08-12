@@ -8,10 +8,7 @@ from app.models.membership import Membership
 class MembershipRepository:
 
     @staticmethod
-    def create(
-        db: Session,
-        membership: Membership,
-    ):
+    def create(db: Session, membership: Membership):
         db.add(membership)
         db.commit()
         db.refresh(membership)
@@ -20,8 +17,8 @@ class MembershipRepository:
     @staticmethod
     def get_member(
         db: Session,
-        organization_id: int,
-        user_id: int,
+        organization_id: UUID,
+        user_id: UUID,
     ):
         return (
             db.query(Membership)
@@ -35,7 +32,7 @@ class MembershipRepository:
     @staticmethod
     def get_members(
         db: Session,
-        organization_id: int,
+        organization_id: UUID,
     ):
         return (
             db.query(Membership)
@@ -46,27 +43,21 @@ class MembershipRepository:
         )
 
     @staticmethod
-    def update(
-        db: Session,
-        membership: Membership,
-    ):
+    def update(db: Session, membership: Membership):
         db.commit()
         db.refresh(membership)
         return membership
 
     @staticmethod
-    def delete(
-        db: Session,
-        membership: Membership,
-    ):
+    def delete(db: Session, membership: Membership):
         db.delete(membership)
         db.commit()
 
     @staticmethod
     def get_by_user_and_organization(
         db: Session,
-        user_id: int,
-        organization_id: int,
+        user_id: UUID,
+        organization_id: UUID,
     ):
         return (
             db.query(Membership)
@@ -84,9 +75,7 @@ class MembershipRepository:
     ):
         return (
             db.query(Membership)
-            .filter(
-                Membership.id == membership_id,
-            )
+            .filter(Membership.id == membership_id)
             .first()
         )
 
@@ -97,8 +86,6 @@ class MembershipRepository:
     ):
         return (
             db.query(Membership)
-            .filter(
-                Membership.public_id == public_id,
-            )
+            .filter(Membership.public_id == public_id)
             .first()
         )

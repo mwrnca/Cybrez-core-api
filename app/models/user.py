@@ -1,19 +1,12 @@
-from sqlalchemy import (
-    Boolean,
-    DateTime,
-    Enum,
-    Integer,
-    String,
-    func,
-    ForeignKey,
-)
-from sqlalchemy.orm import relationship
-from sqlalchemy.orm import Mapped, mapped_column
-from app.models.enums import UserRole
+import uuid
+
+from sqlalchemy import Boolean, DateTime, Integer, String, func
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
 from app.database.base import Base
 from app.models.mixins import SoftDeleteMixin
-import uuid
-from sqlalchemy.dialects.postgresql import UUID
+
 
 class User(SoftDeleteMixin, Base):
     __tablename__ = "users"
@@ -21,6 +14,14 @@ class User(SoftDeleteMixin, Base):
     id: Mapped[int] = mapped_column(
         Integer,
         primary_key=True,
+        index=True,
+    )
+
+    public_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        default=uuid.uuid4,
+        unique=True,
+        nullable=False,
         index=True,
     )
 
@@ -44,7 +45,6 @@ class User(SoftDeleteMixin, Base):
     role: Mapped[str] = mapped_column(
         String(50),
         default="consumer",
-        # server_default=text("'consumer'"),
         nullable=False,
     )
 
@@ -80,7 +80,7 @@ class User(SoftDeleteMixin, Base):
         foreign_keys="Organization.owner_id",
         cascade="all, delete-orphan",
     )
-    
+
     memberships = relationship(
         "Membership",
         back_populates="user",
@@ -103,12 +103,4 @@ class User(SoftDeleteMixin, Base):
         "Notification",
         back_populates="user",
         cascade="all, delete-orphan",
-    )
-
-    public_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
-        default=uuid.uuid4,
-        unique=True,
-        nullable=False,
-        index=True,
     )

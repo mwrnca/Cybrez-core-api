@@ -50,7 +50,7 @@ def add_member(
 
     require_role(
         db,
-        organization.id,
+        organization.public_id,
         current_user,
         Roles.MANAGER,
     )
@@ -58,7 +58,7 @@ def add_member(
     try:
         return MembershipService.add_member(
             db=db,
-            organization_id=organization.id,
+            organization_id=organization.public_id,
             user_id=data.user_id,
             role=data.role,
         )
@@ -92,14 +92,14 @@ def list_members(
 
     require_role(
         db,
-        organization.id,
+        organization.public_id,
         current_user,
         Roles.VIEWER,
     )
 
     return MembershipService.get_members(
         db,
-        organization.id,
+        organization.public_id,
     )
 
 
@@ -109,7 +109,7 @@ def list_members(
 )
 def update_member_role(
     organization_id: UUID,
-    user_id: int,
+    user_id: UUID,
     data: MembershipRoleUpdate,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
@@ -127,14 +127,14 @@ def update_member_role(
 
     require_role(
         db,
-        organization.id,
+        organization.public_id,
         current_user,
         Roles.ADMIN,
     )
 
     membership = MembershipRepository.get_member(
         db,
-        organization.id,
+        organization.public_id,
         user_id,
     )
 
@@ -164,7 +164,7 @@ def update_member_role(
 )
 def remove_member(
     organization_id: UUID,
-    user_id: int,
+    user_id: UUID,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -186,7 +186,7 @@ def remove_member(
 
     membership = MembershipRepository.get_member(
         db,
-        organization.id,
+        organization.public_id,
         user_id,
     )
 
@@ -231,8 +231,8 @@ def leave_organization(
 
     membership = MembershipRepository.get_member(
         db,
-        organization.id,
-        current_user.id,
+        organization.public_id,
+        current_user.public_id,
     )
 
     if membership is None:

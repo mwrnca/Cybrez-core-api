@@ -1,7 +1,10 @@
 from datetime import datetime
-from app.models.enums import UserRole
-from pydantic import BaseModel, ConfigDict, EmailStr
 from uuid import UUID
+
+from pydantic import BaseModel, ConfigDict, EmailStr
+
+from app.models.enums import UserRole
+
 
 class UserBase(BaseModel):
     email: EmailStr
@@ -27,5 +30,3 @@ class UserResponse(UserBase):
     role: UserRole
 
     model_config = ConfigDict(from_attributes=True)
-
-

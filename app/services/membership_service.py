@@ -3,15 +3,15 @@ from app.services.activity_log_service import ActivityLogService
 from app.core.roles import Roles
 from app.models.membership import Membership
 from app.repositories.membership_repository import MembershipRepository
-
+from uuid import UUID
 
 class MembershipService:
 
     @staticmethod
     def add_member(
         db: Session,
-        organization_id: int,
-        user_id: int,
+        organization_id: UUID,
+        user_id: UUID,
         role: str = Roles.VIEWER,
     ):
         existing = MembershipRepository.get_member(
@@ -59,7 +59,7 @@ class MembershipService:
     @staticmethod
     def get_members(
         db: Session,
-        organization_id: int,
+        organization_id: UUID,
     ):
         return MembershipRepository.get_members(
             db,

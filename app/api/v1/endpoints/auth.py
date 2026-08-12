@@ -13,7 +13,7 @@ from app.schemas.user import (
     UserResponse,
 )
 from app.models.user import User
-from app.core.dependencies import get_current_user
+from app.api.dependencies import get_current_user
 from app.schemas.token import Token, TokenPayload
 
 from app.services.auth_service import AuthService

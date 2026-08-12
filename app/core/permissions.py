@@ -9,14 +9,14 @@ from app.repositories.membership_repository import MembershipRepository
 
 def require_role(
     db: Session,
-    organization_db_id: int,
+    organization_public_id: UUID,
     current_user: User,
     minimum_role: str,
 ):
     membership = MembershipRepository.get_by_user_and_organization(
         db,
-        current_user.id,
-        organization_db_id,
+        current_user.public_id,
+        organization_public_id,
     )
 
     if membership is None:
@@ -37,7 +37,7 @@ def require_owner(
     organization: Organization,
     current_user: User,
 ):
-    if organization.owner_id != current_user.id:
+    if organization.owner_id != current_user.public_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only the owner can perform this action.",

@@ -47,13 +47,10 @@ class Organization(SoftDeleteMixin, Base):
         nullable=True,
     )
 
-    owner_id: Mapped[int] = mapped_column(
-        ForeignKey(
-            "users.id",
-            ondelete="CASCADE",
-        ),
+    owner_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("users.public_id"),
         nullable=False,
-        index=True,
     )
 
     created_at: Mapped[DateTime] = mapped_column(

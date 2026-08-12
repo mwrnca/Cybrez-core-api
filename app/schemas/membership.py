@@ -1,7 +1,8 @@
 from datetime import datetime
+from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict
-from uuid import UUID
+
 from app.core.roles import Roles
 
 
@@ -10,18 +11,18 @@ class MembershipBase(BaseModel):
 
 
 class MembershipCreate(MembershipBase):
-    user_id: int
+    user_id: UUID
+
 
 class MembershipRoleUpdate(BaseModel):
     role: str
-    
+
+
 class MembershipResponse(BaseModel):
     public_id: UUID
-    organization_id: int
-    user_id: int
+    organization_id: UUID
+    user_id: UUID
     role: str
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
-
-    

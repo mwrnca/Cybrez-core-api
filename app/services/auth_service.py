@@ -56,4 +56,4 @@ class AuthService:
         ):
             return None
 
-        return create_access_token(str(user.id))
+        return create_access_token(str(user.public_id))
