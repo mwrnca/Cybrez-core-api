@@ -1,4 +1,7 @@
+import uuid
+
 from sqlalchemy import (
+    Boolean,
     DateTime,
     Enum,
     ForeignKey,
@@ -6,22 +9,12 @@ from sqlalchemy import (
     String,
     Text,
     func,
-    Boolean,
 )
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import (
-    Mapped,
-    mapped_column,
-    relationship,
-)
-
-import uuid
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database.base import Base
-from app.models.enums import (
-    TaskPriority,
-    TaskStatus,
-)
+from app.models.enums import TaskPriority, TaskStatus
 from app.models.mixins import SoftDeleteMixin
 
 

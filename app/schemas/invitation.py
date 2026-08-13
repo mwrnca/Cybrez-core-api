@@ -1,6 +1,11 @@
 from datetime import datetime
 from uuid import UUID
-from pydantic import BaseModel, ConfigDict, EmailStr
+
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    EmailStr,
+)
 
 
 class InvitationCreate(BaseModel):
@@ -10,7 +15,7 @@ class InvitationCreate(BaseModel):
 
 class InvitationResponse(BaseModel):
     public_id: UUID
-    organization_id: int
+    organization_id: UUID
     email: EmailStr
     role: str
     token: str
@@ -18,6 +23,6 @@ class InvitationResponse(BaseModel):
     expires_at: datetime
     created_at: datetime
 
-    model_config = ConfigDict(from_attributes=True)
-
-    
+    model_config = ConfigDict(
+        from_attributes=True,
+    )

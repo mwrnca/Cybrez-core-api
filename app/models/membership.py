@@ -28,14 +28,20 @@ class Membership(Base):
 
     organization_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
-        ForeignKey("organizations.public_id", ondelete="CASCADE"),
+        ForeignKey(
+            "organizations.public_id",
+            ondelete="CASCADE",
+        ),
         nullable=False,
         index=True,
     )
 
     user_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
-        ForeignKey("users.public_id", ondelete="CASCADE"),
+        ForeignKey(
+            "users.public_id",
+            ondelete="CASCADE",
+        ),
         nullable=False,
         index=True,
     )

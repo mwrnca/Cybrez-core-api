@@ -1,24 +1,36 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import (
+    APIRouter,
+    Depends,
+    HTTPException,
+    status,
+)
 from sqlalchemy.orm import Session
 
 from app.api.dependencies import get_current_user
-from app.database.session import get_db
-from app.models.user import User
-from app.repositories.organization_repository import OrganizationRepository
-from app.repositories.membership_repository import MembershipRepository
-from app.schemas.membership import (
-    MembershipCreate,
-    MembershipRoleUpdate,
-    MembershipResponse,
-)
-from app.services.membership_service import MembershipService
 from app.core.permissions import (
     require_owner,
     require_role,
 )
 from app.core.roles import Roles
+from app.database.session import get_db
+from app.models.user import User
+from app.repositories.membership_repository import (
+    MembershipRepository,
+)
+from app.repositories.organization_repository import (
+    OrganizationRepository,
+)
+from app.schemas.membership import (
+    MembershipCreate,
+    MembershipResponse,
+    MembershipRoleUpdate,
+)
+from app.services.membership_service import (
+    MembershipService,
+)
+
 
 router = APIRouter(
     prefix="/organizations",
@@ -37,9 +49,11 @@ def add_member(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    organization = OrganizationRepository.get_by_public_id(
-        db,
-        organization_id,
+    organization = (
+        OrganizationRepository.get_by_public_id(
+            db,
+            organization_id,
+        )
     )
 
     if organization is None:
@@ -79,9 +93,11 @@ def list_members(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    organization = OrganizationRepository.get_by_public_id(
-        db,
-        organization_id,
+    organization = (
+        OrganizationRepository.get_by_public_id(
+            db,
+            organization_id,
+        )
     )
 
     if organization is None:
@@ -114,9 +130,11 @@ def update_member_role(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    organization = OrganizationRepository.get_by_public_id(
-        db,
-        organization_id,
+    organization = (
+        OrganizationRepository.get_by_public_id(
+            db,
+            organization_id,
+        )
     )
 
     if organization is None:
@@ -168,9 +186,11 @@ def remove_member(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    organization = OrganizationRepository.get_by_public_id(
-        db,
-        organization_id,
+    organization = (
+        OrganizationRepository.get_by_public_id(
+            db,
+            organization_id,
+        )
     )
 
     if organization is None:
@@ -208,6 +228,8 @@ def remove_member(
             detail=str(e),
         )
 
+    return None
+
 
 @router.delete(
     "/{organization_id}/leave",
@@ -218,9 +240,11 @@ def leave_organization(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    organization = OrganizationRepository.get_by_public_id(
-        db,
-        organization_id,
+    organization = (
+        OrganizationRepository.get_by_public_id(
+            db,
+            organization_id,
+        )
     )
 
     if organization is None:
@@ -238,7 +262,10 @@ def leave_organization(
     if membership is None:
         raise HTTPException(
             status_code=404,
-            detail="You are not a member of this organization",
+            detail=(
+                "You are not a member "
+                "of this organization"
+            ),
         )
 
     try:
@@ -252,3 +279,5 @@ def leave_organization(
             status_code=400,
             detail=str(e),
         )
+
+    return None

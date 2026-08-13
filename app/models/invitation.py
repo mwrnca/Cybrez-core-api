@@ -1,10 +1,23 @@
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, func
-from sqlalchemy.orm import Mapped, mapped_column, relationship
-from app.models.user import User
+import uuid
+from datetime import datetime
+
+from sqlalchemy import (
+    Boolean,
+    DateTime,
+    ForeignKey,
+    Integer,
+    String,
+    func,
+)
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import (
+    Mapped,
+    mapped_column,
+    relationship,
+)
 
 from app.database.base import Base
-import uuid
-from sqlalchemy.dialects.postgresql import UUID
+
 
 class Invitation(Base):
     __tablename__ = "invitations"
@@ -15,8 +28,20 @@ class Invitation(Base):
         index=True,
     )
 
-    organization_id: Mapped[int] = mapped_column(
-        ForeignKey("organizations.id", ondelete="CASCADE"),
+    public_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        default=uuid.uuid4,
+        unique=True,
+        nullable=False,
+        index=True,
+    )
+
+    organization_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey(
+            "organizations.public_id",
+            ondelete="CASCADE",
+        ),
         nullable=False,
         index=True,
     )
@@ -42,14 +67,15 @@ class Invitation(Base):
     accepted: Mapped[bool] = mapped_column(
         Boolean,
         default=False,
+        nullable=False,
     )
 
-    expires_at: Mapped[DateTime] = mapped_column(
+    expires_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
     )
 
-    created_at: Mapped[DateTime] = mapped_column(
+    created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),
     )
@@ -57,12 +83,4 @@ class Invitation(Base):
     organization = relationship(
         "Organization",
         back_populates="invitations",
-    )
-
-    public_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
-        default=uuid.uuid4,
-        unique=True,
-        nullable=False,
-        index=True,
     )

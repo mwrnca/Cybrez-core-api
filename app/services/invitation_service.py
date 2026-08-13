@@ -1,15 +1,21 @@
 import secrets
 from datetime import datetime, timedelta, timezone
-from app.models.user import User
-from app.services.activity_log_service import ActivityLogService
+
 from sqlalchemy.orm import Session
 
 from app.models.invitation import Invitation
 from app.models.organization import Organization
 from app.models.user import User
-from app.repositories.invitation_repository import InvitationRepository
+from app.repositories.invitation_repository import (
+    InvitationRepository,
+)
 from app.schemas.invitation import InvitationCreate
-from app.services.membership_service import MembershipService
+from app.services.activity_log_service import (
+    ActivityLogService,
+)
+from app.services.membership_service import (
+    MembershipService,
+)
 
 
 class InvitationService:
@@ -21,12 +27,14 @@ class InvitationService:
         data: InvitationCreate,
     ):
         invitation = Invitation(
-            organization_id=organization.id,
+            organization_id=organization.public_id,
             email=data.email,
             role=data.role,
             token=secrets.token_urlsafe(32),
-            expires_at=datetime.now(timezone.utc)
-            + timedelta(days=7),
+            expires_at=(
+                datetime.now(timezone.utc)
+                + timedelta(days=7)
+            ),
         )
 
         return InvitationRepository.create(
@@ -40,17 +48,22 @@ class InvitationService:
         invitation: Invitation,
         current_user: User,
     ):
-
         if invitation.accepted:
-            raise ValueError("Invitation already accepted")
+            raise ValueError(
+                "Invitation already accepted"
+            )
 
-        if invitation.expires_at < datetime.now(timezone.utc):
-            raise ValueError("Invitation has expired")
+        if invitation.expires_at < datetime.now(
+            timezone.utc
+        ):
+            raise ValueError(
+                "Invitation has expired"
+            )
 
         MembershipService.add_member(
             db=db,
             organization_id=invitation.organization_id,
-            user_id=current_user.id,
+            user_id=current_user.public_id,
             role=invitation.role,
         )
 
@@ -67,14 +80,31 @@ class InvitationService:
         invitation: Invitation,
         current_user: User,
     ):
+        organization = (
+            db.query(Organization)
+            .filter(
+                Organization.public_id
+                == invitation.organization_id,
+            )
+            .first()
+        )
+
+        if organization is None:
+            raise ValueError(
+                "Organization not found"
+            )
+
         ActivityLogService.log(
             db=db,
-            organization_id=invitation.organization_id,
+            organization_id=organization.id,
             user_id=current_user.id,
             action="invitation_cancelled",
             target_type="invitation",
             target_id=invitation.id,
-            description=f"Cancelled invitation for {invitation.email}",
+            description=(
+                f"Cancelled invitation "
+                f"for {invitation.email}"
+            ),
         )
 
         InvitationRepository.delete(
@@ -105,14 +135,31 @@ class InvitationService:
             invitation,
         )
 
+        organization = (
+            db.query(Organization)
+            .filter(
+                Organization.public_id
+                == invitation.organization_id,
+            )
+            .first()
+        )
+
+        if organization is None:
+            raise ValueError(
+                "Organization not found"
+            )
+
         ActivityLogService.log(
             db=db,
-            organization_id=invitation.organization_id,
+            organization_id=organization.id,
             user_id=current_user.id,
             action="invitation_resent",
             target_type="invitation",
             target_id=invitation.id,
-            description=f"Resent invitation to {invitation.email}",
+            description=(
+                f"Resent invitation "
+                f"to {invitation.email}"
+            ),
         )
 
         return invitation

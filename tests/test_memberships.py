@@ -1,9 +1,5 @@
-from app.core.security import hash_password
-from app.models.user import User
-
-
 def create_user(client, email, name):
-    client.post(
+    response = client.post(
         "/api/v1/auth/register",
         json={
             "email": email,
@@ -12,23 +8,31 @@ def create_user(client, email, name):
         },
     )
 
+    return response.json()
 
-def get_token(client):
-    create_user(
-        client,
-        "owner@example.com",
-        "Owner",
-    )
 
+def login(client, email):
     response = client.post(
         "/api/v1/auth/login",
         data={
-            "username": "owner@example.com",
+            "username": email,
             "password": "password123",
         },
     )
 
     return response.json()["access_token"]
+
+
+def get_token_and_owner(client):
+    owner = create_user(
+        client,
+        "owner@example.com",
+        "Owner",
+    )
+
+    token = login(client, "owner@example.com")
+
+    return token, owner["public_id"]
 
 
 def auth_header(token):
@@ -54,14 +58,14 @@ def create_organization(client, token):
 
 def test_add_member(client):
 
-    token = get_token(client)
+    token, owner_public_id = get_token_and_owner(client)
 
     organization_public_id = create_organization(
         client,
         token,
     )
 
-    create_user(
+    member = create_user(
         client,
         "member@example.com",
         "Member",
@@ -70,26 +74,26 @@ def test_add_member(client):
     response = client.post(
         f"/api/v1/organizations/{organization_public_id}/members",
         json={
-            "user_id": 2,
+            "user_id": member["public_id"],
             "role": "viewer",
         },
         headers=auth_header(token),
     )
 
     assert response.status_code == 201
-    assert response.json()["user_id"] == 2
+    assert response.json()["user_id"] == member["public_id"]
 
 
 def test_add_duplicate_member(client):
 
-    token = get_token(client)
+    token, owner_public_id = get_token_and_owner(client)
 
     organization_public_id = create_organization(
         client,
         token,
     )
 
-    create_user(
+    member = create_user(
         client,
         "member@example.com",
         "Member",
@@ -98,7 +102,7 @@ def test_add_duplicate_member(client):
     client.post(
         f"/api/v1/organizations/{organization_public_id}/members",
         json={
-            "user_id": 2,
+            "user_id": member["public_id"],
             "role": "viewer",
         },
         headers=auth_header(token),
@@ -107,7 +111,7 @@ def test_add_duplicate_member(client):
     response = client.post(
         f"/api/v1/organizations/{organization_public_id}/members",
         json={
-            "user_id": 2,
+            "user_id": member["public_id"],
             "role": "viewer",
         },
         headers=auth_header(token),
@@ -118,14 +122,14 @@ def test_add_duplicate_member(client):
 
 def test_list_members(client):
 
-    token = get_token(client)
+    token, owner_public_id = get_token_and_owner(client)
 
     organization_public_id = create_organization(
         client,
         token,
     )
 
-    create_user(
+    member = create_user(
         client,
         "member@example.com",
         "Member",
@@ -134,7 +138,7 @@ def test_list_members(client):
     client.post(
         f"/api/v1/organizations/{organization_public_id}/members",
         json={
-            "user_id": 2,
+            "user_id": member["public_id"],
             "role": "viewer",
         },
         headers=auth_header(token),
@@ -151,7 +155,7 @@ def test_list_members(client):
 
 def test_list_members_invalid_organization(client):
 
-    token = get_token(client)
+    token, owner_public_id = get_token_and_owner(client)
 
     response = client.get(
         "/api/v1/organizations/11111111-1111-1111-1111-111111111111/members",
@@ -160,16 +164,17 @@ def test_list_members_invalid_organization(client):
 
     assert response.status_code == 404
 
+
 def test_remove_member(client):
 
-    token = get_token(client)
+    token, owner_public_id = get_token_and_owner(client)
 
     organization_public_id = create_organization(
         client,
         token,
     )
 
-    create_user(
+    member = create_user(
         client,
         "member@example.com",
         "Member",
@@ -178,14 +183,14 @@ def test_remove_member(client):
     client.post(
         f"/api/v1/organizations/{organization_public_id}/members",
         json={
-            "user_id": 2,
+            "user_id": member["public_id"],
             "role": "viewer",
         },
         headers=auth_header(token),
     )
 
     response = client.delete(
-        f"/api/v1/organizations/{organization_public_id}/members/2",
+        f"/api/v1/organizations/{organization_public_id}/members/{member['public_id']}",
         headers=auth_header(token),
     )
 
@@ -199,9 +204,10 @@ def test_remove_member(client):
     assert len(response.json()) == 1
     assert response.json()[0]["role"] == "owner"
 
+
 def test_cannot_remove_owner(client):
 
-    token = get_token(client)
+    token, owner_public_id = get_token_and_owner(client)
 
     organization_public_id = create_organization(
         client,
@@ -209,22 +215,23 @@ def test_cannot_remove_owner(client):
     )
 
     response = client.delete(
-        f"/api/v1/organizations/{organization_public_id}/members/1",
+        f"/api/v1/organizations/{organization_public_id}/members/{owner_public_id}",
         headers=auth_header(token),
     )
 
     assert response.status_code == 400
 
+
 def test_leave_organization(client):
 
-    token = get_token(client)
+    token, owner_public_id = get_token_and_owner(client)
 
     organization_public_id = create_organization(
         client,
         token,
     )
 
-    create_user(
+    member = create_user(
         client,
         "member@example.com",
         "Member",
@@ -233,19 +240,13 @@ def test_leave_organization(client):
     client.post(
         f"/api/v1/organizations/{organization_public_id}/members",
         json={
-            "user_id": 2,
+            "user_id": member["public_id"],
             "role": "viewer",
         },
         headers=auth_header(token),
     )
 
-    member_token = client.post(
-        "/api/v1/auth/login",
-        data={
-            "username": "member@example.com",
-            "password": "password123",
-        },
-    ).json()["access_token"]
+    member_token = login(client, "member@example.com")
 
     response = client.delete(
         f"/api/v1/organizations/{organization_public_id}/leave",
@@ -262,9 +263,10 @@ def test_leave_organization(client):
     assert len(response.json()) == 1
     assert response.json()[0]["role"] == "owner"
 
+
 def test_owner_cannot_leave_organization(client):
 
-    token = get_token(client)
+    token, owner_public_id = get_token_and_owner(client)
 
     organization_public_id = create_organization(
         client,

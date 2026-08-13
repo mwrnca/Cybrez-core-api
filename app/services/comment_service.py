@@ -33,7 +33,7 @@ class CommentService:
 
         ActivityLogService.log(
             db=db,
-            organization_id=task.project.organization_id,
+            organization_id=task.project.organization.id,
             user_id=current_user.id,
             action="comment_created",
             target_type="comment",
@@ -69,7 +69,7 @@ class CommentService:
 
         ActivityLogService.log(
             db=db,
-            organization_id=comment.task.project.organization_id,
+            organization_id=comment.task.project.organization.id,
             user_id=current_user.id,
             action="comment_updated",
             target_type="comment",
@@ -93,7 +93,7 @@ class CommentService:
 
         ActivityLogService.log(
             db=db,
-            organization_id=comment.task.project.organization_id,
+            organization_id=comment.task.project.organization.id,
             user_id=current_user.id,
             action="comment_deleted",
             target_type="comment",
@@ -117,7 +117,7 @@ class CommentService:
 
         ActivityLogService.log(
             db=db,
-            organization_id=comment.task.project.organization_id,
+            organization_id=comment.task.project.organization.id,
             user_id=current_user.id,
             action="comment_restored",
             target_type="comment",

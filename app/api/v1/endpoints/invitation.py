@@ -111,7 +111,7 @@ def cancel_invitation(
             detail="Invitation not found",
         )
 
-    organization = OrganizationRepository.get_by_id(
+    organization = OrganizationRepository.get_by_public_id(
         db,
         invitation.organization_id,
     )
@@ -147,8 +147,8 @@ def resend_invitation(
             detail="Invitation not found",
         )
 
-    organization = OrganizationRepository.get_by_id(
-        db,
+    organization = OrganizationRepository.get_by_public_id(
+       db,
         invitation.organization_id,
     )
 

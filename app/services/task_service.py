@@ -1,15 +1,50 @@
 from sqlalchemy.orm import Session
+
 from app.models.user import User
 from app.models.project import Project
 from app.models.task import Task
-from app.repositories.task_repository import TaskRepository
-from app.schemas.task import (
-    TaskCreate,
-    TaskUpdate,
-)
+
 from app.repositories.membership_repository import MembershipRepository
+from app.repositories.task_repository import TaskRepository
+
+from app.schemas.task import TaskCreate, TaskUpdate
+
 
 class TaskService:
+
+    @staticmethod
+    def _resolve_assignee(
+        db: Session,
+        user_public_id,
+        organization_id: int,
+    ) -> int | None:
+
+        if user_public_id is None:
+            return None
+
+        user = (
+            db.query(User)
+            .filter(User.public_id == user_public_id)
+            .first()
+        )
+
+        if user is None:
+            raise ValueError("Assignee not found")
+
+        membership = (
+            MembershipRepository.get_by_user_and_organization(
+                db,
+                user.id,
+                organization_id,
+            )
+        )
+
+        if membership is None:
+            raise ValueError(
+                "Assignee is not a member of this organization"
+            )
+
+        return user.id
 
     @staticmethod
     def create(
@@ -17,19 +52,11 @@ class TaskService:
         project: Project,
         data: TaskCreate,
     ):
-
-        if data.assignee_id is not None:
-
-            membership = MembershipRepository.get_by_user_and_organization(
-                db,
-                data.assignee_id,
-                project.organization_id,
-            )
-
-            if membership is None:
-                raise ValueError(
-                    "Assignee is not a member of this organization"
-                )
+        assignee_id = TaskService._resolve_assignee(
+            db,
+            data.assignee_id,
+            project.organization_id,
+        )
 
         task = Task(
             project_id=project.id,
@@ -37,7 +64,7 @@ class TaskService:
             description=data.description,
             status=data.status,
             priority=data.priority,
-            assignee_id=data.assignee_id,
+            assignee_id=assignee_id,
             due_date=data.due_date,
         )
 
@@ -62,18 +89,25 @@ class TaskService:
         task: Task,
         data: TaskUpdate,
     ):
+        assignee_id = TaskService._resolve_assignee(
+            db,
+            data.assignee_id,
+            task.project.organization_id,
+        )
+
         task.title = data.title
         task.description = data.description
         task.status = data.status
         task.priority = data.priority
-        task.assignee_id = data.assignee_id
+        task.assignee_id = assignee_id
         task.due_date = data.due_date
 
         return TaskRepository.update(
             db,
             task,
         )
-        
+
+    @staticmethod
     def delete(
         db: Session,
         task: Task,

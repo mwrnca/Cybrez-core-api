@@ -1,11 +1,14 @@
+from uuid import UUID
+
 from sqlalchemy.orm import Session
-from app.services.activity_log_service import ActivityLogService
+
 from app.core.roles import Roles
 from app.models.membership import Membership
-from app.models.user import User
 from app.models.organization import Organization
+from app.models.user import User
 from app.repositories.membership_repository import MembershipRepository
-from uuid import UUID
+from app.services.activity_log_service import ActivityLogService
+
 
 class MembershipService:
 
@@ -23,7 +26,9 @@ class MembershipService:
         )
 
         if existing:
-            raise ValueError("User is already a member")
+            raise ValueError(
+                "User is already a member"
+            )
 
         valid_roles = {
             Roles.VIEWER,
@@ -33,11 +38,39 @@ class MembershipService:
         }
 
         if role not in valid_roles:
-            raise ValueError("Invalid role")
+            raise ValueError(
+                "Invalid role"
+            )
+
+        organization = (
+            db.query(Organization)
+            .filter(
+                Organization.public_id == organization_id,
+            )
+            .first()
+        )
+
+        if organization is None:
+            raise ValueError(
+                "Organization not found"
+            )
+
+        user = (
+            db.query(User)
+            .filter(
+                User.public_id == user_id,
+            )
+            .first()
+        )
+
+        if user is None:
+            raise ValueError(
+                "User not found"
+            )
 
         membership = Membership(
-            organization_id=organization_id,
-            user_id=user_id,
+            organization_id=organization.public_id,
+            user_id=user.public_id,
             role=role,
         )
 
@@ -46,17 +79,16 @@ class MembershipService:
             membership,
         )
 
-        org = db.query(Organization).filter(Organization.public_id == organization_id).first()
-        user = db.query(User).filter(User.public_id == user_id).first()
-
         ActivityLogService.log(
             db=db,
-            organization_id=org.id,
+            organization_id=organization.id,
             user_id=user.id,
             action="member_added",
             target_type="membership",
             target_id=membership.id,
-            description=f"Added user {user_id} as {role}",
+            description=(
+                f"Added user {user.public_id} as {role}"
+            ),
         )
 
         return membership
@@ -85,7 +117,9 @@ class MembershipService:
         }
 
         if role not in valid_roles:
-            raise ValueError("Invalid role")
+            raise ValueError(
+                "Invalid role"
+            )
 
         membership.role = role
 
@@ -94,17 +128,43 @@ class MembershipService:
             membership,
         )
 
-        org = db.query(Organization).filter(Organization.public_id == membership.organization_id).first()
-        user = db.query(User).filter(User.public_id == membership.user_id).first()
+        organization = (
+            db.query(Organization)
+            .filter(
+                Organization.public_id
+                == membership.organization_id,
+            )
+            .first()
+        )
+
+        user = (
+            db.query(User)
+            .filter(
+                User.public_id == membership.user_id,
+            )
+            .first()
+        )
+
+        if organization is None:
+            raise ValueError(
+                "Organization not found"
+            )
+
+        if user is None:
+            raise ValueError(
+                "User not found"
+            )
 
         ActivityLogService.log(
             db=db,
-            organization_id=org.id,
+            organization_id=organization.id,
             user_id=user.id,
             action="member_role_updated",
             target_type="membership",
             target_id=membership.id,
-            description=f"Changed role to {membership.role}",
+            description=(
+                f"Changed role to {membership.role}"
+            ),
         )
 
         return membership
@@ -119,17 +179,43 @@ class MembershipService:
                 "The owner cannot be removed"
             )
 
-        org = db.query(Organization).filter(Organization.public_id == membership.organization_id).first()
-        user = db.query(User).filter(User.public_id == membership.user_id).first()
+        organization = (
+            db.query(Organization)
+            .filter(
+                Organization.public_id
+                == membership.organization_id,
+            )
+            .first()
+        )
+
+        user = (
+            db.query(User)
+            .filter(
+                User.public_id == membership.user_id,
+            )
+            .first()
+        )
+
+        if organization is None:
+            raise ValueError(
+                "Organization not found"
+            )
+
+        if user is None:
+            raise ValueError(
+                "User not found"
+            )
 
         ActivityLogService.log(
             db=db,
-            organization_id=org.id,
+            organization_id=organization.id,
             user_id=user.id,
             action="member_removed",
             target_type="membership",
             target_id=membership.id,
-            description=f"Removed user {membership.user_id}",
+            description=(
+                f"Removed user {user.public_id}"
+            ),
         )
 
         MembershipRepository.delete(
@@ -144,20 +230,48 @@ class MembershipService:
     ):
         if membership.role == Roles.OWNER:
             raise ValueError(
-                "The organization owner cannot leave the organization."
+                "The organization owner "
+                "cannot leave the organization."
             )
 
-        org = db.query(Organization).filter(Organization.public_id == membership.organization_id).first()
-        user = db.query(User).filter(User.public_id == membership.user_id).first()
+        organization = (
+            db.query(Organization)
+            .filter(
+                Organization.public_id
+                == membership.organization_id,
+            )
+            .first()
+        )
+
+        user = (
+            db.query(User)
+            .filter(
+                User.public_id == membership.user_id,
+            )
+            .first()
+        )
+
+        if organization is None:
+            raise ValueError(
+                "Organization not found"
+            )
+
+        if user is None:
+            raise ValueError(
+                "User not found"
+            )
 
         ActivityLogService.log(
             db=db,
-            organization_id=org.id,
+            organization_id=organization.id,
             user_id=user.id,
             action="member_left",
             target_type="membership",
             target_id=membership.id,
-            description=f"User {membership.user_id} left the organization",
+            description=(
+                f"User {user.public_id} "
+                "left the organization"
+            ),
         )
 
         MembershipRepository.delete(

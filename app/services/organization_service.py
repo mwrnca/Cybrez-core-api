@@ -1,9 +1,15 @@
+import re
+from uuid import UUID
+
 from sqlalchemy.orm import Session
-from app.models.membership import Membership
-from app.repositories.membership_repository import MembershipRepository
+
 from app.core.roles import Roles
+from app.models.membership import Membership
 from app.models.organization import Organization
 from app.models.user import User
+from app.repositories.membership_repository import (
+    MembershipRepository,
+)
 from app.repositories.organization_repository import (
     OrganizationRepository,
 )
@@ -11,9 +17,10 @@ from app.schemas.organization import (
     OrganizationCreate,
     OrganizationUpdate,
 )
-from app.services.activity_log_service import ActivityLogService
-from uuid import UUID
-import re
+from app.services.activity_log_service import (
+    ActivityLogService,
+)
+
 
 class OrganizationService:
 
@@ -21,9 +28,23 @@ class OrganizationService:
     def generate_slug(name: str) -> str:
         slug = name.lower()
 
-        slug = re.sub(r"[^a-z0-9\s-]", "", slug)
-        slug = re.sub(r"\s+", "-", slug)
-        slug = re.sub(r"-+", "-", slug)
+        slug = re.sub(
+            r"[^a-z0-9\s-]",
+            "",
+            slug,
+        )
+
+        slug = re.sub(
+            r"\s+",
+            "-",
+            slug,
+        )
+
+        slug = re.sub(
+            r"-+",
+            "-",
+            slug,
+        )
 
         return slug.strip("-")
 
@@ -33,8 +54,9 @@ class OrganizationService:
         current_user: User,
         data: OrganizationCreate,
     ):
-
-        slug = OrganizationService.generate_slug(data.name)
+        slug = OrganizationService.generate_slug(
+            data.name
+        )
 
         existing = OrganizationRepository.get_by_slug(
             db,
@@ -77,14 +99,17 @@ class OrganizationService:
             action="organization_created",
             target_type="organization",
             target_id=organization.id,
-            description=f"Created organization '{organization.name}'",
+            description=(
+                f"Created organization "
+                f"'{organization.name}'"
+            ),
         )
 
         return organization
 
     @staticmethod
     def get_all(
-        db: Session
+        db: Session,
     ):
         return OrganizationRepository.get_all(db)
 
@@ -93,13 +118,17 @@ class OrganizationService:
         db: Session,
         public_id: UUID,
     ):
-        organization = OrganizationRepository.get_by_public_id(
-            db,
-            public_id,
+        organization = (
+            OrganizationRepository.get_by_public_id(
+                db,
+                public_id,
+            )
         )
 
         if organization is None:
-            raise ValueError("Organization not found")
+            raise ValueError(
+                "Organization not found"
+            )
 
         return organization
 
@@ -110,19 +139,27 @@ class OrganizationService:
         current_user: User,
         data: OrganizationUpdate,
     ):
-        organization = OrganizationRepository.get_by_public_id(
-            db, 
-            organization_id
+        organization = (
+            OrganizationRepository.get_by_public_id(
+                db,
+                organization_id,
+            )
         )
 
         if organization is None:
-            raise ValueError("Organization not found")
+            raise ValueError(
+                "Organization not found"
+            )
 
         if organization.owner_id != current_user.public_id:
-            raise PermissionError("You are not the owner")
+            raise PermissionError(
+                "You are not the owner"
+            )
 
         if data.name is not None:
-            slug = OrganizationService.generate_slug(data.name)
+            slug = OrganizationService.generate_slug(
+                data.name
+            )
 
             existing = OrganizationRepository.get_by_slug(
                 db,
@@ -158,7 +195,10 @@ class OrganizationService:
             action="organization_updated",
             target_type="organization",
             target_id=organization.id,
-            description=f"Updated organization '{organization.name}'",
+            description=(
+                f"Updated organization "
+                f"'{organization.name}'"
+            ),
         )
 
         return organization
@@ -169,16 +209,22 @@ class OrganizationService:
         organization_id: UUID,
         current_user: User,
     ):
-        organization = OrganizationRepository.get_by_public_id(
-            db, 
-            organization_id
+        organization = (
+            OrganizationRepository.get_by_public_id(
+                db,
+                organization_id,
+            )
         )
 
         if organization is None:
-            raise ValueError("Organization not found")
+            raise ValueError(
+                "Organization not found"
+            )
 
         if organization.owner_id != current_user.public_id:
-            raise PermissionError("You are not the owner")
+            raise PermissionError(
+                "You are not the owner"
+            )
 
         OrganizationRepository.delete(
             db,
@@ -192,7 +238,10 @@ class OrganizationService:
             action="organization_deleted",
             target_type="organization",
             target_id=organization.id,
-            description=f"Deleted organization '{organization.name}'",
+            description=(
+                f"Deleted organization "
+                f"'{organization.name}'"
+            ),
         )
 
     @staticmethod
@@ -201,20 +250,28 @@ class OrganizationService:
         organization_id: UUID,
         current_user: User,
     ):
-        organization = OrganizationRepository.get_by_public_id(
-            db,
-            organization_id,
-            include_deleted=True,
+        organization = (
+            OrganizationRepository.get_by_public_id(
+                db,
+                organization_id,
+                include_deleted=True,
+            )
         )
 
         if organization is None:
-            raise ValueError("Organization not found")
+            raise ValueError(
+                "Organization not found"
+            )
 
         if organization.deleted_at is None:
-            raise ValueError("Organization is not deleted")
+            raise ValueError(
+                "Organization is not deleted"
+            )
 
         if organization.owner_id != current_user.public_id:
-            raise PermissionError("You are not the owner")
+            raise PermissionError(
+                "You are not the owner"
+            )
 
         organization = OrganizationRepository.restore(
             db,
@@ -228,7 +285,10 @@ class OrganizationService:
             action="organization_restored",
             target_type="organization",
             target_id=organization.id,
-            description=f"Restored organization '{organization.name}'",
+            description=(
+                f"Restored organization "
+                f"'{organization.name}'"
+            ),
         )
 
         return organization

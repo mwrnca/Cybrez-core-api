@@ -11,7 +11,7 @@ class TaskBase(BaseModel):
     description: str | None = None
     status: TaskStatus
     priority: TaskPriority
-    assignee_id: int | None = None
+    assignee_id: UUID | None = None
     due_date: datetime | None = None
 
 

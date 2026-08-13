@@ -1,21 +1,22 @@
+from uuid import UUID
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from app.models.task import Task
-from app.api.dependencies import get_current_user
 
+from app.api.dependencies import get_current_user
+from app.core.permissions import require_role
+from app.core.roles import Roles
 from app.database.session import get_db
 from app.models.user import User
 from app.repositories.project_repository import ProjectRepository
 from app.repositories.task_repository import TaskRepository
 from app.schemas.task import (
     TaskCreate,
-    TaskUpdate,
     TaskResponse,
+    TaskUpdate,
 )
-from app.core.permissions import require_role
-from app.core.roles import Roles
 from app.services.task_service import TaskService
-from uuid import UUID
+
 
 router = APIRouter(
     prefix="/projects",
@@ -58,7 +59,6 @@ def create_task(
             project,
             data,
         )
-
     except ValueError as e:
         raise HTTPException(
             status_code=400,
@@ -98,6 +98,7 @@ def list_tasks(
         project.id,
     )
 
+
 @router.get(
     "/tasks/{task_public_id}",
     response_model=TaskResponse,
@@ -119,10 +120,10 @@ def get_task(
         )
 
     require_role(
-        db, 
+        db,
         task.project.organization_id,
         current_user,
-            Roles.MANAGER,
+        Roles.MANAGER,
     )
 
     return task
@@ -151,11 +152,11 @@ def update_task(
         )
 
     require_role(
-    db,
-    task.project.organization_id,
-    current_user,
-    Roles.MANAGER,
-)
+        db,
+        task.project.organization_id,
+        current_user,
+        Roles.MANAGER,
+    )
 
     try:
         return TaskService.update(
@@ -163,7 +164,6 @@ def update_task(
             task,
             data,
         )
-
     except ValueError as e:
         raise HTTPException(
             status_code=400,
@@ -193,18 +193,25 @@ def delete_task(
             detail="Task not found",
         )
 
+    if task.project.public_id != project_public_id:
+        raise HTTPException(
+            status_code=404,
+            detail="Task not found in this project",
+        )
+
     require_role(
-    db,
-    task.project.organization_id,
-    current_user,
-    Roles.ADMIN,
-)
+        db,
+        task.project.organization_id,
+        current_user,
+        Roles.ADMIN,
+    )
 
     TaskService.delete(
         db,
         task,
         current_user,
     )
+
 
 @router.post(
     "/tasks/{task_public_id}/restore",
@@ -228,23 +235,23 @@ def restore_task(
         )
 
     require_role(
-    db,
-    task.project.organization_id,
-    current_user,
-    Roles.MANAGER,
-)
+        db,
+        task.project.organization_id,
+        current_user,
+        Roles.MANAGER,
+    )
 
     try:
         return TaskService.restore(
             db,
             task,
         )
-
     except ValueError as e:
         raise HTTPException(
             status_code=400,
             detail=str(e),
         )
+
 
 @router.post(
     "/tasks/{task_public_id}/archive",
@@ -279,12 +286,12 @@ def archive_task(
             db,
             task,
         )
-
     except ValueError as e:
         raise HTTPException(
             status_code=400,
             detail=str(e),
         )
+
 
 @router.post(
     "/tasks/{task_public_id}/unarchive",
@@ -319,7 +326,6 @@ def unarchive_task(
             db,
             task,
         )
-
     except ValueError as e:
         raise HTTPException(
             status_code=400,
