@@ -110,13 +110,18 @@ class OrganizationService:
     @staticmethod
     def get_all(
         db: Session,
+        current_user: User,
     ):
-        return OrganizationRepository.get_all(db)
+        return OrganizationRepository.get_all_for_user(
+            db,
+            current_user.public_id,
+        )   
 
     @staticmethod
     def get_by_public_id(
         db: Session,
         public_id: UUID,
+        current_user: User,
     ):
         organization = (
             OrganizationRepository.get_by_public_id(
@@ -128,6 +133,17 @@ class OrganizationService:
         if organization is None:
             raise ValueError(
                 "Organization not found"
+            )
+
+        membership = MembershipRepository.get_by_user_and_organization(
+            db,
+            current_user.public_id,
+            organization.public_id,
+        )   
+
+        if membership is None:
+            raise PermissionError(
+                "You are not a member of this organization"
             )
 
         return organization

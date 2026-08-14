@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
-
+from uuid import UUID
+from app.models.membership import Membership
 from app.core.soft_delete import soft_delete
 from app.models.organization import Organization
 
@@ -60,12 +61,18 @@ class OrganizationRepository:
         )
 
     @staticmethod
-    def get_all(
+    def get_all_for_user(
         db: Session,
+        user_id: UUID,
     ):
         return (
             db.query(Organization)
+            .join(
+                Membership,
+                Membership.organization_id == Organization.public_id,
+            )
             .filter(
+                Membership.user_id == user_id,
                 Organization.deleted_at.is_(None),
             )
             .all()

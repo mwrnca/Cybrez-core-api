@@ -55,7 +55,10 @@ def list_organizations(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    return OrganizationService.get_all(db)
+    return OrganizationService.get_all(
+        db,
+        current_user,
+    )
 
 @router.get(
     "/{organization_public_id}",
@@ -66,16 +69,22 @@ def get_organization(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-
     try:
         return OrganizationService.get_by_public_id(
             db,
             organization_public_id,
-        )   
+            current_user,
+        )
 
     except ValueError as e:
         raise HTTPException(
             status_code=404,
+            detail=str(e),
+        )
+
+    except PermissionError as e:
+        raise HTTPException(
+            status_code=403,
             detail=str(e),
         )
 
@@ -177,8 +186,21 @@ def get_organization_overview(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    return OrganizationOverviewService.get_overview(
-        db,
-        organization_public_id,
-        current_user,
-    )
+    try:
+        return OrganizationOverviewService.get_overview(
+            db,
+            organization_public_id,
+            current_user,
+        )
+
+    except ValueError as e:
+        raise HTTPException(
+            status_code=404,
+            detail=str(e),
+        )
+
+    except PermissionError as e:
+        raise HTTPException(
+            status_code=403,
+            detail=str(e),
+        )

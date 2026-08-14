@@ -26,6 +26,7 @@ class OrganizationOverviewService:
         organization = OrganizationService.get_by_public_id(
             db,
             organization_public_id,
+            current_user,
         )
 
         stats = DashboardRepository.get_organization_stats(
