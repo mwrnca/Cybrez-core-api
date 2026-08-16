@@ -9,4 +9,5 @@ from app.api.v1.endpoints import (
     comment,
     activity_log,
     notification,
+    persona,
 )

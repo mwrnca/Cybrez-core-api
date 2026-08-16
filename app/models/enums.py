@@ -36,4 +36,8 @@ class TaskPriority(str, Enum):
     high = "high"
     urgent = "urgent"
 
-    
+class PersonaType(str, Enum):
+    CONSUMER = "consumer"
+    PROFESSIONAL = "professional"
+    BUSINESS = "business"
+    INSTITUTION = "institution"

@@ -104,3 +104,10 @@ class User(SoftDeleteMixin, Base):
         back_populates="user",
         cascade="all, delete-orphan",
     )
+
+    personas = relationship(
+        "Persona",
+        back_populates="user",
+        foreign_keys="Persona.user_id",
+        cascade="all, delete-orphan",
+    )

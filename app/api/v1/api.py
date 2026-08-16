@@ -10,6 +10,8 @@ from app.api.v1.endpoints import (
     task,
     comment,
     activity_log,
+    persona,
+    directory,
 )
 
 api_router = APIRouter()
@@ -23,3 +25,5 @@ api_router.include_router(project.router)
 api_router.include_router(task.router)
 api_router.include_router(comment.router)
 api_router.include_router(activity_log.router,)
+api_router.include_router(persona.router)
+api_router.include_router(directory.router)
