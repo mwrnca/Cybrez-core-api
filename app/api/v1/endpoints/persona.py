@@ -10,6 +10,7 @@ from app.schemas.persona import (
     PersonaCreate,
     PersonaResponse,
     PersonaUpdate,
+    PublicPersonaResponse,
 )
 from app.services.persona_service import PersonaService
 
@@ -60,7 +61,7 @@ def get_my_personas(
 
 @router.get(
     "/{public_id}",
-    response_model=PersonaResponse,
+    response_model=PublicPersonaResponse,
 )
 def get_persona(
     public_id: UUID,
@@ -78,7 +79,6 @@ def get_persona(
         )
 
     return persona
-
 
 @router.patch(
     "/{public_id}",

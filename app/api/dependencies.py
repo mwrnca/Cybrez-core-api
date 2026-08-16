@@ -34,7 +34,11 @@ def get_current_user(
 
     user = (
         db.query(User)
-        .filter(User.public_id == user_public_id)
+        .filter(
+            User.public_id == user_public_id,
+            User.is_active.is_(True),
+            User.deleted_at.is_(None),
+        )
         .first()
     )
 

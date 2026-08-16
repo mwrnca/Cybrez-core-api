@@ -5,8 +5,6 @@ from sqlalchemy.orm import Session
 from app.core.soft_delete import soft_delete
 from app.models.persona import Persona
 
-from datetime import datetime
-
 class PersonaRepository:
 
     @staticmethod
@@ -148,3 +146,5 @@ class PersonaRepository:
             )
             .first()
         )
+
+    

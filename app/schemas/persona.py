@@ -37,3 +37,17 @@ class PersonaResponse(PersonaBase):
     model_config = ConfigDict(
         from_attributes=True,
     )
+
+
+class PublicPersonaResponse(BaseModel):
+    public_id: UUID
+    type: PersonaType
+    display_name: str
+    slug: str
+    bio: str | None = None
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = ConfigDict(
+        from_attributes=True,
+    )
