@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from sqlalchemy.orm import Session
 
 from app.models.organization import Organization
@@ -47,11 +49,11 @@ class ProjectService:
     @staticmethod
     def get_all(
         db: Session,
-        organization_id,
+        organization_public_id: UUID,
     ):
-        return ProjectRepository.get_by_organization(
+        return ProjectRepository.get_by_organization_public_id(
             db,
-            organization_id,
+            organization_public_id,
         )
 
     @staticmethod

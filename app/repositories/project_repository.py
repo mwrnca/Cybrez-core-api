@@ -54,14 +54,14 @@ class ProjectRepository:
         return query.first()
 
     @staticmethod
-    def get_by_organization(
+    def get_by_organization_public_id(
         db: Session,
-        organization_id: UUID,
+        organization_public_id: UUID,
     ):
         return (
             db.query(Project)
             .filter(
-                Project.organization_id == organization_id,
+                Project.organization_id == organization_public_id,
                 Project.deleted_at.is_(None),
             )
             .all()
