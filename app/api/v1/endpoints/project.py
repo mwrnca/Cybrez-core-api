@@ -81,6 +81,13 @@ def list_projects(
             detail="Organization not found",
         )
 
+    require_role(
+        db,
+        organization.public_id,
+        current_user,
+        Roles.VIEWER,
+    )
+
     return ProjectService.get_all(
         db,
         organization.public_id,
@@ -141,6 +148,13 @@ def get_project(
             status_code=404,
             detail="Project not found",
         )
+
+    require_role(
+        db,
+        project.organization_id,
+        current_user,
+        Roles.VIEWER,
+    )
 
     return project
 

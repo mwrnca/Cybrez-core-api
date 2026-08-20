@@ -14,7 +14,7 @@ from app.schemas.user import (
 )
 from app.models.user import User
 from app.api.dependencies import get_current_user
-from app.schemas.token import Token, TokenPayload
+from app.schemas.token import RefreshTokenRequest, Token, TokenPayload
 
 from app.services.auth_service import AuthService
 
@@ -50,22 +50,39 @@ def login(
     db: Session = Depends(get_db),
 ):
 
-    token = AuthService.login(
+    token_data = AuthService.login(
         db,
         form_data.username,
         form_data.password,
     )
 
-    if token is None:
+    if token_data is None:
         raise HTTPException(
             status_code=401,
             detail="Invalid email or password",
         )
 
-    return {
-        "access_token": token,
-        "token_type": "bearer",
-    }
+    return token_data
+
+
+@router.post(
+    "/refresh",
+    response_model=Token,
+)
+def refresh_token(
+    data: RefreshTokenRequest,
+    db: Session = Depends(get_db),
+):
+    token_data = AuthService.refresh(db, data.refresh_token)
+
+    if token_data is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired refresh token",
+        )
+
+    return token_data
+
 
 @router.get(
     "/me",

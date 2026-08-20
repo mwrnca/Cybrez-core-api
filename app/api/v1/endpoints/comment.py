@@ -228,32 +228,3 @@ def get_comment(
     )
 
     return comment
-
-@router.get(
-    "/{comment_public_id}",
-    response_model=CommentResponse,
-)
-def get_comment(
-    comment_public_id: UUID,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
-):
-    comment = CommentRepository.get_by_public_id(
-        db,
-        comment_public_id,
-    )
-
-    if comment is None:
-        raise HTTPException(
-            status_code=404,
-            detail="Comment not found",
-        )
-
-    require_role(
-        db,
-        comment.task.project.organization_id,
-        current_user,
-        Roles.EMPLOYEE,
-    )
-
-    return comment
