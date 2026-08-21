@@ -34,7 +34,7 @@ class TaskService:
         membership = (
             MembershipRepository.get_by_user_and_organization(
                 db,
-                user.id,
+                user.public_id,
                 organization_id,
             )
         )

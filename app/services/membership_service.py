@@ -3,6 +3,7 @@ from uuid import UUID
 from sqlalchemy.orm import Session
 
 from app.core.roles import Roles
+from app.core.role_hierarchy import ROLE_HIERARCHY
 from app.models.membership import Membership
 from app.models.organization import Organization
 from app.models.user import User
@@ -18,6 +19,7 @@ class MembershipService:
         organization_id: UUID,
         user_id: UUID,
         role: str = Roles.VIEWER,
+        granter_role: str | None = None,
     ):
         existing = MembershipRepository.get_member(
             db,
@@ -40,6 +42,14 @@ class MembershipService:
         if role not in valid_roles:
             raise ValueError(
                 "Invalid role"
+            )
+
+        if (
+            granter_role is not None
+            and ROLE_HIERARCHY[role] > ROLE_HIERARCHY[granter_role]
+        ):
+            raise ValueError(
+                "You cannot grant a role higher than your own"
             )
 
         organization = (
@@ -108,6 +118,7 @@ class MembershipService:
         db: Session,
         membership: Membership,
         role: str,
+        granter_role: str | None = None,
     ):
         valid_roles = {
             Roles.VIEWER,
@@ -119,6 +130,14 @@ class MembershipService:
         if role not in valid_roles:
             raise ValueError(
                 "Invalid role"
+            )
+
+        if (
+            granter_role is not None
+            and ROLE_HIERARCHY[role] > ROLE_HIERARCHY[granter_role]
+        ):
+            raise ValueError(
+                "You cannot grant a role higher than your own"
             )
 
         membership.role = role

@@ -62,7 +62,7 @@ def add_member(
             detail="Organization not found",
         )
 
-    require_role(
+    granter_membership = require_role(
         db,
         organization.public_id,
         current_user,
@@ -75,6 +75,7 @@ def add_member(
             organization_id=organization.public_id,
             user_id=data.user_id,
             role=data.role,
+            granter_role=granter_membership.role,
         )
 
     except ValueError as e:
@@ -143,7 +144,7 @@ def update_member_role(
             detail="Organization not found",
         )
 
-    require_role(
+    granter_membership = require_role(
         db,
         organization.public_id,
         current_user,
@@ -167,6 +168,7 @@ def update_member_role(
             db,
             membership,
             data.role,
+            granter_role=granter_membership.role,
         )
 
     except ValueError as e:

@@ -2,7 +2,8 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-
+from app.core.permissions import require_role
+from app.core.roles import Roles
 from app.api.dependencies import get_current_user
 from app.core.permissions import require_role
 from app.core.roles import Roles
@@ -115,9 +116,11 @@ def update_comment(
         )
 
     if comment.user_id != current_user.id:
-        raise HTTPException(
-            status_code=403,
-            detail="Not allowed",
+        require_role(
+            db,
+            comment.task.project.organization_id,
+            current_user,
+            Roles.ADMIN,
         )
 
     return CommentService.update(
@@ -149,9 +152,11 @@ def delete_comment(
         )
 
     if comment.user_id != current_user.id:
-        raise HTTPException(
-            status_code=403,
-            detail="Not allowed",
+        require_role(
+            db,
+            comment.task.project.organization_id,
+            current_user,
+            Roles.ADMIN,
         )
 
     CommentService.delete(
@@ -183,9 +188,11 @@ def restore_comment(
         )
 
     if comment.user_id != current_user.id:
-        raise HTTPException(
-            status_code=403,
-            detail="Not allowed",
+        require_role(
+            db,
+            comment.task.project.organization_id,
+            current_user,
+            Roles.ADMIN,
         )
 
     try:
