@@ -1,11 +1,11 @@
 from datetime import datetime
 from uuid import UUID
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 class OrganizationBase(BaseModel):
-    name: str
-    description: str | None = None
-    logo_url: str | None = None
+    name: str = Field(max_length=255)
+    description: str | None = Field(default=None, max_length=2000)
+    logo_url: str | None = Field(default=None, max_length=500)
 
 
 class OrganizationCreate(OrganizationBase):
@@ -13,9 +13,9 @@ class OrganizationCreate(OrganizationBase):
 
 
 class OrganizationUpdate(BaseModel):
-    name: str | None = None
-    description: str | None = None
-    logo_url: str | None = None
+    name: str | None = Field(default=None, max_length=255)
+    description: str | None = Field(default=None, max_length=2000)
+    logo_url: str | None = Field(default=None, max_length=500)
 
 
 class OrganizationResponse(OrganizationBase):
@@ -28,4 +28,3 @@ class OrganizationResponse(OrganizationBase):
     updated_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
-    

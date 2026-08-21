@@ -1,12 +1,12 @@
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ProjectBase(BaseModel):
-    name: str
-    description: str | None = None
+    name: str = Field(max_length=255)
+    description: str | None = Field(default=None, max_length=2000)
 
 
 class ProjectCreate(ProjectBase):
