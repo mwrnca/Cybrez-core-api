@@ -81,3 +81,7 @@ class Comment(SoftDeleteMixin, Base):
     @property
     def task_public_id(self):
         return self.task.public_id
+
+    @property
+    def user_public_id(self):
+        return self.user.public_id

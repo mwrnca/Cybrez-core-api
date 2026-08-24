@@ -43,6 +43,16 @@ class InvitationService:
         )
 
     @staticmethod
+    def list_invitations(
+        db: Session,
+        organization_id,
+    ):
+        return InvitationRepository.get_by_organization(
+            db,
+            organization_id,
+        )
+
+    @staticmethod
     def accept_invitation(
         db: Session,
         invitation: Invitation,

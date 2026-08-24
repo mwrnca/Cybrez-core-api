@@ -30,7 +30,7 @@ class PersonaUpdate(BaseModel):
 
 class PersonaResponse(PersonaBase):
     public_id: UUID
-    user_id: int
+    user_public_id: UUID
     created_at: datetime
     updated_at: datetime
 

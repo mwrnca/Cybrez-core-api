@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from sqlalchemy.orm import Session
 
 from app.models.invitation import Invitation
@@ -37,6 +39,22 @@ class InvitationRepository:
             db.query(Invitation)
             .filter(
                 Invitation.email == email,
+            )
+            .all()
+        )
+
+    @staticmethod
+    def get_by_organization(
+        db: Session,
+        organization_id: UUID,
+    ):
+        return (
+            db.query(Invitation)
+            .filter(
+                Invitation.organization_id == organization_id,
+            )
+            .order_by(
+                Invitation.created_at.desc(),
             )
             .all()
         )

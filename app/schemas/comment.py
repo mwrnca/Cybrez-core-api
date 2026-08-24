@@ -1,10 +1,10 @@
 from datetime import datetime
 from uuid import UUID
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class CommentBase(BaseModel):
-    content: str
+    content: str = Field(max_length=5000)
 
 
 class CommentCreate(CommentBase):
@@ -18,7 +18,7 @@ class CommentUpdate(CommentBase):
 class CommentResponse(CommentBase):
     public_id: UUID
     task_public_id: UUID
-    user_id: int
+    user_public_id: UUID
     created_at: datetime
     updated_at: datetime
 

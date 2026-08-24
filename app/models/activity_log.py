@@ -53,6 +53,13 @@ class ActivityLog(Base):
         nullable=False,
     )
 
+    # NOTE: target_id stays as the internal integer PK of whatever
+    # target_type points to (comment, task, project, membership, or
+    # organization). It's polymorphic -- there's no single relationship
+    # to resolve it to a public_id without branching on target_type.
+    # Left as internal-only for now; low priority since it's already
+    # scoped behind org membership (require_role) before any caller
+    # can see it at all.
     target_id: Mapped[int] = mapped_column(
         Integer,
         nullable=False,
@@ -83,3 +90,11 @@ class ActivityLog(Base):
         nullable=False,
         index=True,
     )
+
+    @property
+    def organization_public_id(self):
+        return self.organization.public_id
+
+    @property
+    def user_public_id(self):
+        return self.user.public_id if self.user else None

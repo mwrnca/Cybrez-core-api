@@ -84,3 +84,7 @@ class Persona(SoftDeleteMixin, Base):
         back_populates="personas",
         foreign_keys=[user_id],
     )
+
+    @property
+    def user_public_id(self):
+        return self.user.public_id

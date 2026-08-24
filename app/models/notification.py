@@ -58,3 +58,7 @@ class Notification(Base):
         nullable=False,
         index=True,
     )
+
+    @property
+    def user_public_id(self):
+        return self.user.public_id
