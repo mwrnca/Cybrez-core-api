@@ -14,6 +14,11 @@ class Settings(BaseSettings):
 
     DEBUG: bool = False
 
+    # Used to build links (e.g. invitation accept links) inside
+    # server-generated content like notifications and emails.
+    # Set this to the real production frontend URL in prod .env.
+    FRONTEND_URL: str = "http://localhost:5173"
+
     model_config = SettingsConfigDict(
         env_file=".env",
         case_sensitive=True,
