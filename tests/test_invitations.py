@@ -64,6 +64,13 @@ def test_create_invitation(client):
         token,
     )
 
+    # Invitee must already have an account -- register them first.
+    create_user(
+        client,
+        "invitee@example.com",
+        "Invitee",
+    )
+
     response = client.post(
         f"/api/v1/invitations/{organization_public_id}/invite",
         json={
@@ -78,6 +85,67 @@ def test_create_invitation(client):
 
     assert response.status_code == 200
     assert response.json()["email"] == "invitee@example.com"
+
+
+def test_create_invitation_no_account(client):
+
+    create_user(
+        client,
+        "owner@example.com",
+        "Owner",
+    )
+
+    token = login(
+        client,
+        "owner@example.com",
+    )
+
+    organization_public_id = create_organization(
+        client,
+        token,
+    )
+
+    response = client.post(
+        f"/api/v1/invitations/{organization_public_id}/invite",
+        json={
+            "email": "nobody@example.com",
+            "role": "viewer",
+        },
+        headers=auth_header(token),
+    )
+
+    assert response.status_code == 400
+
+
+def test_create_invitation_already_a_member(client):
+
+    create_user(
+        client,
+        "owner@example.com",
+        "Owner",
+    )
+
+    token = login(
+        client,
+        "owner@example.com",
+    )
+
+    organization_public_id = create_organization(
+        client,
+        token,
+    )
+
+    # Owner invites themself -- they're already a member.
+    response = client.post(
+        f"/api/v1/invitations/{organization_public_id}/invite",
+        json={
+            "email": "owner@example.com",
+            "role": "viewer",
+        },
+        headers=auth_header(token),
+    )
+
+    assert response.status_code == 400
 
 
 def test_accept_invitation(client, db):
@@ -98,6 +166,12 @@ def test_accept_invitation(client, db):
         owner_token,
     )
 
+    create_user(
+        client,
+        "member@example.com",
+        "Member",
+    )
+
     invitation = client.post(
         f"/api/v1/invitations/{organization_public_id}/invite",
         json={
@@ -106,12 +180,6 @@ def test_accept_invitation(client, db):
         },
         headers=auth_header(owner_token),
     ).json()
-
-    create_user(
-        client,
-        "member@example.com",
-        "Member",
-    )
 
     member_token = login(
         client,
@@ -166,6 +234,12 @@ def test_accept_expired_invitation(client, db):
         owner_token,
     )
 
+    create_user(
+        client,
+        "expired@example.com",
+        "Expired",
+    )
+
     invitation = client.post(
         f"/api/v1/invitations/{organization_public_id}/invite",
         json={
@@ -185,12 +259,6 @@ def test_accept_expired_invitation(client, db):
     ) - timedelta(days=1)
 
     db.commit()
-
-    create_user(
-        client,
-        "expired@example.com",
-        "Expired",
-    )
 
     token = login(
         client,
@@ -223,6 +291,12 @@ def test_accept_same_invitation_twice(client):
         owner_token,
     )
 
+    create_user(
+        client,
+        "member@example.com",
+        "Member",
+    )
+
     invitation = client.post(
         f"/api/v1/invitations/{organization_public_id}/invite",
         json={
@@ -231,12 +305,6 @@ def test_accept_same_invitation_twice(client):
         },
         headers=auth_header(owner_token),
     ).json()
-
-    create_user(
-        client,
-        "member@example.com",
-        "Member",
-    )
 
     member_token = login(
         client,
@@ -271,6 +339,12 @@ def test_cancel_invitation(client):
     organization_public_id = create_organization(
         client,
         token,
+    )
+
+    create_user(
+        client,
+        "invitee@example.com",
+        "Invitee",
     )
 
     invitation = client.post(
@@ -325,6 +399,12 @@ def test_resend_invitation(client):
     organization_public_id = create_organization(
         client,
         owner_token,
+    )
+
+    create_user(
+        client,
+        "invitee@example.com",
+        "Invitee",
     )
 
     invitation = client.post(
@@ -383,6 +463,12 @@ def test_resend_accepted_invitation(client):
         owner_token,
     )
 
+    create_user(
+        client,
+        "member@example.com",
+        "Member",
+    )
+
     invitation = client.post(
         f"/api/v1/invitations/{organization_public_id}/invite",
         json={
@@ -391,12 +477,6 @@ def test_resend_accepted_invitation(client):
         },
         headers=auth_header(owner_token),
     ).json()
-
-    create_user(
-        client,
-        "member@example.com",
-        "Member",
-    )
 
     member_token = login(
         client,

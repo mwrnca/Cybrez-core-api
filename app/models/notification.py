@@ -35,6 +35,21 @@ class Notification(Base):
         nullable=False,
     )
 
+    # Lets the frontend render a type-specific action (e.g. an "Accept"
+    # button for invitation notifications) instead of just showing text.
+    # Nullable so existing/plain notifications are unaffected.
+    type: Mapped[str | None] = mapped_column(
+        String(50),
+        nullable=True,
+    )
+
+    # Opaque reference the frontend action needs -- for type="invitation"
+    # this is the invitation token needed to call the accept endpoint.
+    reference_id: Mapped[str | None] = mapped_column(
+        String(255),
+        nullable=True,
+    )
+
     is_read: Mapped[bool] = mapped_column(
         Boolean,
         default=False,

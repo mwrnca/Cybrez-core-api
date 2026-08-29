@@ -52,11 +52,18 @@ def invite_user(
         current_user,
     )
 
-    return InvitationService.create_invitation(
-        db,
-        organization,
-        data,
-    )
+    try:
+        return InvitationService.create_invitation(
+            db,
+            organization,
+            data,
+        )
+
+    except ValueError as e:
+        raise HTTPException(
+            status_code=400,
+            detail=str(e),
+        )
 
 
 @router.get(

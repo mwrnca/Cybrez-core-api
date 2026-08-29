@@ -101,6 +101,9 @@ def two_orgs_with_full_resources(client):
     task_a = create_task(client, token_a, project_a)
     comment_a = create_comment(client, token_a, task_a)
 
+    # Invitees must already have an account -- register one first.
+    create_user(client, "someone@example.com", "Someone")
+
     invitation_a = client.post(
         f"/api/v1/invitations/{org_a}/invite",
         json={"email": "someone@example.com", "role": "viewer"},
@@ -423,6 +426,9 @@ def test_cannot_remove_other_org_member(client):
 
 def test_cannot_invite_to_other_org(client):
     ctx = two_orgs_with_full_resources(client)
+
+    # Invitee must already have an account.
+    create_user(client, "injected@example.com", "Injected")
 
     response = client.post(
         f"/api/v1/invitations/{ctx['org_a']}/invite",

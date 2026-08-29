@@ -88,6 +88,8 @@ class InvitationService:
                 f"'{organization.name}' as {data.role}. "
                 f"Accept it here: {accept_url}"
             ),
+            type="invitation",
+            reference_id=invitation.token,
         )
 
         return invitation
@@ -222,9 +224,6 @@ class InvitationService:
             ),
         )
 
-        # The invitee is guaranteed to have existed at invite-creation
-        # time (create_invitation requires it), but re-check here in
-        # case their account was removed in the meantime.
         existing_user = UserRepository.get_by_email(
             db,
             invitation.email,
@@ -245,6 +244,8 @@ class InvitationService:
                     f"'{organization.name}' as {invitation.role} "
                     f"was resent. Accept it here: {accept_url}"
                 ),
+                type="invitation",
+                reference_id=invitation.token,
             )
 
         return invitation

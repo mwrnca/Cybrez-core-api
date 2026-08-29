@@ -9,6 +9,8 @@ class NotificationResponse(BaseModel):
     user_public_id: UUID
     title: str
     message: str
+    type: str | None = None
+    reference_id: str | None = None
     is_read: bool
     created_at: datetime
 

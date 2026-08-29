@@ -8,11 +8,20 @@ from app.repositories.notification_repository import NotificationRepository
 class NotificationService:
 
     @staticmethod
-    def create(db: Session, user: User, title: str, message: str):
+    def create(
+        db: Session,
+        user: User,
+        title: str,
+        message: str,
+        type: str | None = None,
+        reference_id: str | None = None,
+    ):
         notification = Notification(
             user_id=user.id,
             title=title,
             message=message,
+            type=type,
+            reference_id=reference_id,
         )
         return NotificationRepository.create(db, notification)
 
