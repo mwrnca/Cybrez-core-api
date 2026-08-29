@@ -4,6 +4,7 @@ from datetime import datetime, timedelta, timezone
 from sqlalchemy.orm import Session
 
 from app.config.settings import settings
+from app.core.roles import Roles
 from app.models.invitation import Invitation
 from app.models.organization import Organization
 from app.models.user import User
@@ -34,6 +35,19 @@ class InvitationService:
         organization: Organization,
         data: InvitationCreate,
     ):
+        valid_roles = {
+            Roles.VIEWER,
+            Roles.EMPLOYEE,
+            Roles.MANAGER,
+            Roles.ADMIN,
+        }
+
+        if data.role not in valid_roles:
+            raise ValueError(
+                f"'{data.role}' is not a valid role. "
+                "Choose viewer, employee, manager, or admin."
+            )
+
         invitee = UserRepository.get_by_email(
             db,
             data.email,

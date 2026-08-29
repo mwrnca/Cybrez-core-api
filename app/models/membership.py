@@ -66,3 +66,11 @@ class Membership(Base):
         "User",
         back_populates="memberships",
     )
+
+    @property
+    def user_email(self):
+        return self.user.email
+
+    @property
+    def user_full_name(self):
+        return self.user.full_name

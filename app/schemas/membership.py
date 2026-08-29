@@ -25,6 +25,8 @@ class MembershipResponse(BaseModel):
     public_id: UUID
     organization_id: UUID
     user_id: UUID
+    user_email: str
+    user_full_name: str
     role: str
     created_at: datetime
 
