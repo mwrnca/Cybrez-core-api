@@ -88,19 +88,13 @@ class InvitationService:
             invitation,
         )
 
-        accept_url = (
-            f"{settings.FRONTEND_URL}"
-            f"/invitations/accept/{invitation.token}"
-        )
-
         NotificationService.create(
             db,
             invitee,
             title="Workspace invitation",
             message=(
                 f"You've been invited to join "
-                f"'{organization.name}' as {data.role}. "
-                f"Accept it here: {accept_url}"
+                f"'{organization.name}' as {data.role}."
             ),
             type="invitation",
             reference_id=invitation.token,
@@ -244,11 +238,6 @@ class InvitationService:
         )
 
         if existing_user is not None:
-            accept_url = (
-                f"{settings.FRONTEND_URL}"
-                f"/invitations/accept/{invitation.token}"
-            )
-
             NotificationService.create(
                 db,
                 existing_user,
@@ -256,7 +245,7 @@ class InvitationService:
                 message=(
                     f"Your invitation to join "
                     f"'{organization.name}' as {invitation.role} "
-                    f"was resent. Accept it here: {accept_url}"
+                    f"was resent."
                 ),
                 type="invitation",
                 reference_id=invitation.token,
