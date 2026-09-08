@@ -103,6 +103,54 @@ def test_list_tasks(client):
     assert len(response.json()) == 1
 
 
+def test_viewer_can_list_and_view_tasks(client):
+    owner_token = get_token(client)
+    organization_public_id = create_organization(client, owner_token)
+    project_public_id = create_project(
+        client,
+        owner_token,
+        organization_public_id,
+    )
+    task = client.post(
+        f"/api/v1/projects/{project_public_id}/tasks",
+        json=task_payload(),
+        headers=auth_header(owner_token),
+    ).json()
+
+    viewer = client.post(
+        "/api/v1/auth/register",
+        json={
+            "email": "viewer@example.com",
+            "password": "password123",
+            "full_name": "Viewer",
+        },
+    ).json()
+    client.post(
+        f"/api/v1/organizations/{organization_public_id}/members",
+        json={"user_id": viewer["public_id"], "role": "viewer"},
+        headers=auth_header(owner_token),
+    )
+    viewer_token = client.post(
+        "/api/v1/auth/login",
+        data={
+            "username": "viewer@example.com",
+            "password": "password123",
+        },
+    ).json()["access_token"]
+
+    list_response = client.get(
+        f"/api/v1/projects/{project_public_id}/tasks",
+        headers=auth_header(viewer_token),
+    )
+    get_response = client.get(
+        f"/api/v1/projects/tasks/{task['public_id']}",
+        headers=auth_header(viewer_token),
+    )
+
+    assert list_response.status_code == 200
+    assert get_response.status_code == 200
+
+
 def test_update_task(client):
 
     token = get_token(client)

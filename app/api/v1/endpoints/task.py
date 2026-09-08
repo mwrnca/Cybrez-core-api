@@ -90,7 +90,7 @@ def list_tasks(
         db,
         project.organization_id,
         current_user,
-        Roles.MANAGER,
+        Roles.VIEWER,
     )
 
     return TaskService.get_all(
@@ -123,7 +123,7 @@ def get_task(
         db,
         task.project.organization_id,
         current_user,
-        Roles.MANAGER,
+        Roles.VIEWER,
     )
 
     return task
