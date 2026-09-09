@@ -8,6 +8,7 @@ from app.models.activity_log import ActivityLog
 from app.models.comment import Comment
 from app.models.notification import Notification
 from app.models.persona import Persona
+from app.models.refresh_session import RefreshSession
 
 __all__ = [
     "User",
@@ -20,4 +21,5 @@ __all__ = [
     "Comment",
     "Notification",
     "Persona",
+    "RefreshSession",
 ]

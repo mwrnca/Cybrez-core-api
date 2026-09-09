@@ -84,6 +84,21 @@ def refresh_token(
     return token_data
 
 
+@router.post("/logout")
+def logout(
+    data: RefreshTokenRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    if not AuthService.logout(db, current_user, data.refresh_token):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid refresh token",
+        )
+
+    return {"detail": "Logged out"}
+
+
 @router.get(
     "/me",
     response_model=UserResponse,

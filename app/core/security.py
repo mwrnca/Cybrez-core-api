@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta, timezone
+import uuid
 
 from jose import jwt, JWTError
 from passlib.context import CryptContext
@@ -23,6 +24,17 @@ def verify_password(
         plain_password,
         hashed_password,
     )
+
+
+def hash_refresh_token(token: str) -> str:
+    return pwd_context.hash(token)
+
+
+def verify_refresh_token(
+    token: str,
+    token_hash: str,
+) -> bool:
+    return pwd_context.verify(token, token_hash)
 
 
 def create_access_token(subject: str) -> str:
@@ -50,6 +62,7 @@ def create_refresh_token(subject: str) -> str:
 
     payload = {
         "sub": subject,
+        "jti": str(uuid.uuid4()),
         "exp": expire,
         "type": "refresh",
     }
