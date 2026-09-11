@@ -43,8 +43,7 @@ class Notification(Base):
         nullable=True,
     )
 
-    # Opaque reference the frontend action needs -- for type="invitation"
-    # this is the invitation token needed to call the accept endpoint.
+    # Type-specific reference; invitation notifications use the invitation UUID.
     reference_id: Mapped[str | None] = mapped_column(
         String(255),
         nullable=True,

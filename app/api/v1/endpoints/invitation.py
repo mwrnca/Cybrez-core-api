@@ -15,9 +15,15 @@ from app.repositories.invitation_repository import (
 )
 from app.schemas.invitation import (
     InvitationCreate,
+    InvitationLinkResponse,
     InvitationResponse,
 )
 from app.services.invitation_service import InvitationService
+from app.core.rate_limit import (
+    invite_create_limiter,
+    invite_resend_limiter,
+    user_rate_limit,
+)
 from uuid import UUID
 
 router = APIRouter(
@@ -29,6 +35,7 @@ router = APIRouter(
 @router.post(
     "/{organization_id}/invite",
     response_model=InvitationResponse,
+    dependencies=[Depends(user_rate_limit(invite_create_limiter))],
 )
 def invite_user(
     organization_id: UUID,
@@ -102,6 +109,39 @@ def list_invitations(
     )
 
 
+@router.get(
+    "/{invitation_id}/link",
+    response_model=InvitationLinkResponse,
+)
+def get_invitation_link(
+    invitation_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    invitation = InvitationRepository.get_by_public_id(
+        db,
+        invitation_id,
+    )
+
+    if invitation is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Invitation not found",
+        )
+
+    if current_user.email.strip().casefold() != invitation.email.strip().casefold():
+        require_role(
+            db,
+            invitation.organization_id,
+            current_user,
+            Roles.ADMIN,
+        )
+
+    return InvitationLinkResponse(
+        acceptance_url=InvitationService.get_invitation_link(invitation),
+    )
+
+
 @router.post(
     "/accept/{token}",
 )
@@ -131,6 +171,12 @@ def accept_invitation(
     except ValueError as e:
         raise HTTPException(
             status_code=400,
+            detail=str(e),
+        )
+
+    except PermissionError as e:
+        raise HTTPException(
+            status_code=403,
             detail=str(e),
         )
 
@@ -173,6 +219,7 @@ def cancel_invitation(
 @router.post(
     "/{invitation_id}/resend",
     response_model=InvitationResponse,
+    dependencies=[Depends(user_rate_limit(invite_resend_limiter))],
 )
 def resend_invitation(
     invitation_id: UUID,

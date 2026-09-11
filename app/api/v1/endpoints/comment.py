@@ -115,6 +115,13 @@ def update_comment(
             detail="Comment not found",
         )
 
+    require_role(
+        db,
+        comment.task.project.organization_id,
+        current_user,
+        Roles.VIEWER,
+    )
+
     if comment.user_id != current_user.id:
         require_role(
             db,
@@ -151,6 +158,13 @@ def delete_comment(
             detail="Comment not found",
         )
 
+    require_role(
+        db,
+        comment.task.project.organization_id,
+        current_user,
+        Roles.VIEWER,
+    )
+
     if comment.user_id != current_user.id:
         require_role(
             db,
@@ -186,6 +200,13 @@ def restore_comment(
             status_code=404,
             detail="Comment not found",
         )
+
+    require_role(
+        db,
+        comment.task.project.organization_id,
+        current_user,
+        Roles.VIEWER,
+    )
 
     if comment.user_id != current_user.id:
         require_role(

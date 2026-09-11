@@ -97,7 +97,7 @@ class InvitationService:
                 f"'{organization.name}' as {data.role}."
             ),
             type="invitation",
-            reference_id=invitation.token,
+            reference_id=str(invitation.public_id),
         )
 
         return invitation
@@ -111,6 +111,12 @@ class InvitationService:
             db,
             organization_id,
         )
+
+    @staticmethod
+    def get_invitation_link(
+        invitation: Invitation,
+    ):
+        return f"{settings.FRONTEND_URL.rstrip('/')}/invitations/accept/{invitation.token}"
 
     @staticmethod
     def accept_invitation(
@@ -128,6 +134,14 @@ class InvitationService:
         ):
             raise ValueError(
                 "Invitation has expired"
+            )
+
+        if (
+            current_user.email.strip().casefold()
+            != invitation.email.strip().casefold()
+        ):
+            raise PermissionError(
+                "This invitation was issued for a different email address"
             )
 
         MembershipService.add_member(
@@ -248,7 +262,7 @@ class InvitationService:
                     f"was resent."
                 ),
                 type="invitation",
-                reference_id=invitation.token,
+                reference_id=str(invitation.public_id),
             )
 
         return invitation

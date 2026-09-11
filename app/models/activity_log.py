@@ -53,13 +53,8 @@ class ActivityLog(Base):
         nullable=False,
     )
 
-    # NOTE: target_id stays as the internal integer PK of whatever
-    # target_type points to (comment, task, project, membership, or
-    # organization). It's polymorphic -- there's no single relationship
-    # to resolve it to a public_id without branching on target_type.
-    # Left as internal-only for now; low priority since it's already
-    # scoped behind org membership (require_role) before any caller
-    # can see it at all.
+    # Internal polymorphic target reference. API responses resolve this
+    # value to the target model's public UUID.
     target_id: Mapped[int] = mapped_column(
         Integer,
         nullable=False,

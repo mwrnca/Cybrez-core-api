@@ -367,6 +367,22 @@ def test_cannot_delete_other_org_comment(client):
     assert response.status_code in (403, 404)
 
 
+def test_cannot_restore_other_org_comment(client):
+    ctx = two_orgs_with_full_resources(client)
+
+    client.delete(
+        f"/api/v1/comments/{ctx['comment_a']}",
+        headers=auth_header(ctx["token_a"]),
+    )
+
+    response = client.post(
+        f"/api/v1/comments/{ctx['comment_a']}/restore",
+        headers=auth_header(ctx["token_b"]),
+    )
+
+    assert response.status_code in (403, 404)
+
+
 # ---------------------------------------------------------------------
 # Activity logs
 # ---------------------------------------------------------------------
@@ -459,3 +475,124 @@ def test_cannot_resend_other_org_invitation(client):
     )
 
     assert response.status_code in (403, 404)
+
+
+# ---------------------------------------------------------------------
+# Search
+# ---------------------------------------------------------------------
+
+def search(client, token, query):
+    response = client.get(
+        "/api/v1/search/",
+        params={"q": query},
+        headers=auth_header(token),
+    )
+    assert response.status_code == 200
+    return response.json()
+
+
+def search_context(client):
+    owner_a = create_user(client, "search-a@example.com", "Search A")
+    token_a = login(client, "search-a@example.com")
+    org_a = create_org(client, token_a, name="Search Org A", slug="search-org-a")
+    project_a = create_project(client, token_a, org_a)
+    task_a = create_task(client, token_a, project_a)
+    comment_a = create_comment(client, token_a, task_a)
+
+    owner_b = create_user(client, "search-b@example.com", "Search B")
+    token_b = login(client, "search-b@example.com")
+    org_b = create_org(client, token_b, name="Search Org B", slug="search-org-b")
+    project_b = create_project(client, token_b, org_b)
+    task_b = create_task(client, token_b, project_b)
+    comment_b = create_comment(client, token_b, task_b)
+
+    return {
+        "owner_a": owner_a,
+        "token_a": token_a,
+        "org_a": org_a,
+        "project_a": project_a,
+        "task_a": task_a,
+        "comment_a": comment_a,
+        "owner_b": owner_b,
+        "token_b": token_b,
+        "org_b": org_b,
+        "project_b": project_b,
+        "task_b": task_b,
+        "comment_b": comment_b,
+    }
+
+
+def test_search_blocks_cross_org_organizations(client):
+    ctx = search_context(client)
+
+    results = search(client, ctx["token_a"], "Search Org B")
+
+    assert results == []
+
+
+def test_search_blocks_cross_org_projects(client):
+    ctx = search_context(client)
+
+    results = search(client, ctx["token_a"], "Backend")
+
+    assert all(result["public_id"] != ctx["project_b"] for result in results)
+
+
+def test_search_blocks_cross_org_tasks(client):
+    ctx = search_context(client)
+
+    results = search(client, ctx["token_a"], "Implement API")
+
+    assert all(result["public_id"] != ctx["task_b"] for result in results)
+
+
+def test_search_blocks_cross_org_comments(client):
+    ctx = search_context(client)
+
+    results = search(client, ctx["token_a"], "First comment")
+
+    assert all(result["public_id"] != ctx["comment_b"] for result in results)
+
+
+def test_search_blocks_cross_org_members(client):
+    ctx = search_context(client)
+
+    results = search(client, ctx["token_a"], "Search B")
+
+    assert all(result["public_id"] != ctx["owner_b"]["public_id"] for result in results)
+
+
+def test_search_returns_results_from_two_member_organizations(client):
+    ctx = search_context(client)
+
+    response = client.post(
+        f"/api/v1/organizations/{ctx['org_b']}/members",
+        json={"user_id": ctx["owner_a"]["public_id"], "role": "viewer"},
+        headers=auth_header(ctx["token_b"]),
+    )
+    assert response.status_code == 201
+
+    organization_results = search(client, ctx["token_a"], "Search Org")
+
+    assert {result["title"] for result in organization_results} == {
+        "Search Org A",
+        "Search Org B",
+    }
+
+
+def test_search_returns_no_org_scoped_results_without_membership(client):
+    ctx = search_context(client)
+    create_user(client, "search-none@example.com", "Search None")
+    token = login(client, "search-none@example.com")
+
+    results = search(client, token, "Search")
+
+    assert results == []
+
+
+def test_search_returns_authorized_results(client):
+    ctx = search_context(client)
+
+    results = search(client, ctx["token_a"], "Backend")
+
+    assert any(result["public_id"] == ctx["project_a"] for result in results)

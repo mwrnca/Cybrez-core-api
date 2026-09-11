@@ -18,7 +18,6 @@ class InvitationResponse(BaseModel):
     organization_id: UUID
     email: EmailStr
     role: str
-    token: str
     accepted: bool
     expires_at: datetime
     created_at: datetime
@@ -26,3 +25,7 @@ class InvitationResponse(BaseModel):
     model_config = ConfigDict(
         from_attributes=True,
     )
+
+
+class InvitationLinkResponse(BaseModel):
+    acceptance_url: str

@@ -14,11 +14,31 @@ class SearchService:
     ):
         results = []
 
-        organizations = SearchRepository.search_organizations(db, query)
-        projects = SearchRepository.search_projects(db, query)
-        tasks = SearchRepository.search_tasks(db, query)
-        comments = SearchRepository.search_comments(db, query)
-        members = SearchRepository.search_members(db, query)
+        organizations = SearchRepository.search_organizations(
+            db,
+            query,
+            current_user.public_id,
+        )
+        projects = SearchRepository.search_projects(
+            db,
+            query,
+            current_user.public_id,
+        )
+        tasks = SearchRepository.search_tasks(
+            db,
+            query,
+            current_user.public_id,
+        )
+        comments = SearchRepository.search_comments(
+            db,
+            query,
+            current_user.public_id,
+        )
+        members = SearchRepository.search_members(
+            db,
+            query,
+            current_user.public_id,
+        )
 
         results.extend(
             {
@@ -68,7 +88,7 @@ class SearchService:
             {
                 "type": "Member",
                 "public_id": str(m.public_id),
-                "title": m.name,
+                "title": m.full_name,
                 "subtitle": m.email,
                 "url": f"/users/{m.public_id}",
             }

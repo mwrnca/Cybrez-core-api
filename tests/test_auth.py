@@ -1,6 +1,8 @@
 from datetime import datetime, timedelta, timezone
+from http.cookies import SimpleCookie
 
 from app.core.security import create_refresh_token, decode_refresh_token
+from app.config.settings import settings
 from app.models.refresh_session import RefreshSession
 
 
@@ -21,6 +23,12 @@ def register_and_login(client, email):
             "password": "password123",
         },
     )
+
+
+def refresh_cookie(response):
+    cookies = SimpleCookie()
+    cookies.load(response.headers["set-cookie"])
+    return cookies[settings.REFRESH_COOKIE_NAME].value
 
 
 def test_register(client):
@@ -114,10 +122,21 @@ def test_login_creates_refresh_session(client, db):
 
     assert response.status_code == 200
     refresh_session = db.query(RefreshSession).one()
-    payload = decode_refresh_token(response.json()["refresh_token"])
+    refresh_token = refresh_cookie(response)
+    payload = decode_refresh_token(refresh_token)
 
     assert str(refresh_session.public_id) == payload["jti"]
-    assert refresh_session.token_hash != response.json()["refresh_token"]
+    assert refresh_session.token_hash != refresh_token
+    assert "HttpOnly" in response.headers["set-cookie"]
+    assert "SameSite=lax" in response.headers["set-cookie"]
+    assert "Path=/api/v1/auth" in response.headers["set-cookie"]
+
+
+def test_login_cookie_is_secure_by_default(client, monkeypatch):
+    monkeypatch.setattr(settings, "REFRESH_COOKIE_SECURE", True)
+    response = register_and_login(client, "secure-cookie@example.com")
+
+    assert "Secure" in response.headers["set-cookie"]
 
 
 def test_valid_refresh_succeeds(client):
@@ -125,27 +144,29 @@ def test_valid_refresh_succeeds(client):
 
     response = client.post(
         "/api/v1/auth/refresh",
-        json={"refresh_token": login_response.json()["refresh_token"]},
     )
 
     assert response.status_code == 200
     assert response.json()["access_token"]
-    assert response.json()["refresh_token"]
+    assert refresh_cookie(response)
 
 
 def test_old_refresh_token_cannot_be_reused_after_rotation(client):
     login_response = register_and_login(client, "rotation@example.com")
-    old_refresh_token = login_response.json()["refresh_token"]
+    old_refresh_token = refresh_cookie(login_response)
 
     response = client.post(
         "/api/v1/auth/refresh",
-        json={"refresh_token": old_refresh_token},
     )
     assert response.status_code == 200
 
+    client.cookies.set(
+        settings.REFRESH_COOKIE_NAME,
+        old_refresh_token,
+        path="/api/v1/auth",
+    )
     response = client.post(
         "/api/v1/auth/refresh",
-        json={"refresh_token": old_refresh_token},
     )
 
     assert response.status_code == 401
@@ -153,14 +174,12 @@ def test_old_refresh_token_cannot_be_reused_after_rotation(client):
 
 def test_nonexistent_refresh_session_returns_401(client):
     login_response = register_and_login(client, "missing-session@example.com")
-    user_id = decode_refresh_token(
-        login_response.json()["refresh_token"]
-    )["sub"]
+    user_id = decode_refresh_token(refresh_cookie(login_response))["sub"]
     token_without_session = create_refresh_token(user_id)
+    client.cookies.set(settings.REFRESH_COOKIE_NAME, token_without_session)
 
     response = client.post(
         "/api/v1/auth/refresh",
-        json={"refresh_token": token_without_session},
     )
 
     assert response.status_code == 401
@@ -174,7 +193,6 @@ def test_revoked_refresh_session_returns_401(client, db):
 
     response = client.post(
         "/api/v1/auth/refresh",
-        json={"refresh_token": login_response.json()["refresh_token"]},
     )
 
     assert response.status_code == 401
@@ -190,7 +208,6 @@ def test_expired_refresh_session_returns_401(client, db):
 
     response = client.post(
         "/api/v1/auth/refresh",
-        json={"refresh_token": login_response.json()["refresh_token"]},
     )
 
     assert response.status_code == 401
@@ -198,15 +215,13 @@ def test_expired_refresh_session_returns_401(client, db):
 
 def test_tampered_refresh_token_returns_401(client):
     login_response = register_and_login(client, "tampered@example.com")
-    refresh_token = login_response.json()["refresh_token"]
+    refresh_token = refresh_cookie(login_response)
     tampered_token = refresh_token[:-1] + (
         "a" if refresh_token[-1] != "a" else "b"
     )
 
-    response = client.post(
-        "/api/v1/auth/refresh",
-        json={"refresh_token": tampered_token},
-    )
+    client.cookies.set(settings.REFRESH_COOKIE_NAME, tampered_token)
+    response = client.post("/api/v1/auth/refresh")
 
     assert response.status_code == 401
 
@@ -215,21 +230,26 @@ def test_refresh_session_cannot_be_used_for_another_user(client, db):
     login_response = register_and_login(client, "bound@example.com")
     other_login_response = register_and_login(client, "other@example.com")
     other_user_id = decode_refresh_token(
-        other_login_response.json()["refresh_token"]
+        refresh_cookie(other_login_response)
     )["sub"]
     refresh_session = (
         db.query(RefreshSession)
-        .filter(RefreshSession.public_id == decode_refresh_token(
-            login_response.json()["refresh_token"]
-        )["jti"])
+        .filter(
+            RefreshSession.public_id
+            == decode_refresh_token(refresh_cookie(login_response))["jti"]
+        )
         .one()
     )
     refresh_session.user_id = other_user_id
     db.commit()
+    client.cookies.set(
+        settings.REFRESH_COOKIE_NAME,
+        refresh_cookie(login_response),
+        path="/api/v1/auth",
+    )
 
     response = client.post(
         "/api/v1/auth/refresh",
-        json={"refresh_token": login_response.json()["refresh_token"]},
     )
 
     assert response.status_code == 401
@@ -242,15 +262,17 @@ def test_logout_revokes_refresh_session(client, db):
     response = client.post(
         "/api/v1/auth/logout",
         headers={"Authorization": f"Bearer {tokens['access_token']}"},
-        json={"refresh_token": tokens["refresh_token"]},
     )
 
     assert response.status_code == 200
+    assert f"{settings.REFRESH_COOKIE_NAME}=" in response.headers[
+        "set-cookie"
+    ]
+    assert "Max-Age=0" in response.headers["set-cookie"]
     assert db.query(RefreshSession).one().revoked_at is not None
 
     response = client.post(
         "/api/v1/auth/refresh",
-        json={"refresh_token": tokens["refresh_token"]},
     )
     assert response.status_code == 401
 
@@ -266,7 +288,6 @@ def test_logout_rejects_another_users_refresh_token(client):
                 f"Bearer {first_login.json()['access_token']}"
             )
         },
-        json={"refresh_token": second_login.json()["refresh_token"]},
     )
 
     assert response.status_code == 401
@@ -280,7 +301,6 @@ def test_inactive_user_cannot_refresh(client, db):
 
     response = client.post(
         "/api/v1/auth/refresh",
-        json={"refresh_token": login_response.json()["refresh_token"]},
     )
 
     assert response.status_code == 401
@@ -294,7 +314,6 @@ def test_deleted_user_cannot_refresh(client, db):
 
     response = client.post(
         "/api/v1/auth/refresh",
-        json={"refresh_token": login_response.json()["refresh_token"]},
     )
 
     assert response.status_code == 401
