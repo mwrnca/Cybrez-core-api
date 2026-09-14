@@ -20,18 +20,10 @@ from fastapi import Depends, HTTPException, Request, status
 
 from app.config.settings import settings
 
-
 class RateLimiter:
-    """
-    Thread-safe sliding-window rate limiter.
-
-    Tracks the timestamps of recent calls per key.  When the number of calls
-    in the last ``period_seconds`` reaches ``max_calls`` the next call is
-    rejected with (False, retry_after_seconds).
-    """
-
     def __init__(self, max_calls: int, period_seconds: int):
         self.max_calls = max_calls
+        self._default_max_calls = max_calls
         self.period_seconds = period_seconds
         self._calls: defaultdict[str, deque] = defaultdict(deque)
         self._lock = threading.Lock()
@@ -63,9 +55,9 @@ class RateLimiter:
             return True, 0
 
     def clear(self) -> None:
-        """Remove all tracked state.  Intended for test isolation only."""
         with self._lock:
             self._calls.clear()
+            self.max_calls = self._default_max_calls
 
 
 # ---------------------------------------------------------------------------

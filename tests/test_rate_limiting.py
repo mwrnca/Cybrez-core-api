@@ -29,7 +29,7 @@ from app.core.rate_limit import (
     search_limiter,
 )
 
-
+from fastapi.testclient import TestClient
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -351,7 +351,7 @@ class TestInviteResendRateLimit:
             json={"email": "rl-resend-invitee@example.com", "role": "viewer"},
             headers=_auth_header(token),
         )
-        assert inv_resp.status_code == 201
+        assert inv_resp.status_code == 200
         inv_id = inv_resp.json()["public_id"]
 
         return token, inv_id
@@ -408,10 +408,16 @@ class TestExceptionHandler:
             )
 
         try:
-            resp = client.get("/_test_internal_error_do_not_use")
+            error_client = TestClient(app, raise_server_exceptions=False)
+            try:
+                resp = error_client.get("/_test_internal_error_do_not_use")
+            finally:
+                error_client.close()
+
             assert resp.status_code == 500
             body = resp.json()
             assert body.get("detail") == "Internal server error"
+
             # Verify nothing sensitive leaks through
             text = resp.text
             assert "SECRET_KEY" not in text

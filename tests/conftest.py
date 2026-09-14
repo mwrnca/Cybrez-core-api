@@ -58,14 +58,25 @@ def client(db):
 @pytest.fixture(autouse=True)
 def reset_rate_limiters():
     """
-    Reset all in-memory rate-limiter state before and after each test.
-
-    This prevents rate-limit counters from leaking between test functions
-    (the limiter instances are module-level singletons).  Without this,
-    tests that make several auth/search calls could inadvertently trigger
-    the limit and cause subsequent tests to fail.
+    Reset in-memory rate-limiter state and restore each limiter's
+    original capacity between tests.
     """
-    from app.core.rate_limit import clear_all_limiters
+    from app.core.rate_limit import (
+        _registry,
+        clear_all_limiters,
+    )
+
+    original_capacities = {
+        id(limiter): limiter.max_calls
+        for limiter in _registry
+    }
+
     clear_all_limiters()
-    yield
-    clear_all_limiters()
+
+    try:
+        yield
+    finally:
+        clear_all_limiters()
+
+        for limiter in _registry:
+            limiter.max_calls = original_capacities[id(limiter)]
