@@ -44,6 +44,15 @@ class Task(SoftDeleteMixin, Base):
         index=True,
     )
 
+    organization_unit_id: Mapped[int | None] = mapped_column(
+        ForeignKey(
+            "organization_units.id",
+            ondelete="SET NULL",
+        ),
+        nullable=True,
+        index=True,
+    )
+
     title: Mapped[str] = mapped_column(
         String(255),
         nullable=False,
@@ -101,6 +110,11 @@ class Task(SoftDeleteMixin, Base):
         back_populates="tasks",
     )
 
+    organization_unit = relationship(
+        "OrganizationUnit",
+        foreign_keys=[organization_unit_id],
+    )
+
     assignee = relationship(
         "User",
         back_populates="assigned_tasks",
@@ -116,3 +130,10 @@ class Task(SoftDeleteMixin, Base):
     @property
     def project_public_id(self):
         return self.project.public_id
+
+    @property
+    def organization_unit_public_id(self):
+        if self.organization_unit is None:
+            return None
+
+        return self.organization_unit.public_id

@@ -9,6 +9,7 @@ from app.models.comment import Comment
 from app.models.notification import Notification
 from app.models.persona import Persona
 from app.models.refresh_session import RefreshSession
+from app.models.organization_unit import OrganizationUnit
 
 __all__ = [
     "User",
@@ -22,4 +23,5 @@ __all__ = [
     "Notification",
     "Persona",
     "RefreshSession",
+    "OrganizationUnit",
 ]

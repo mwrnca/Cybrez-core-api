@@ -99,3 +99,9 @@ class Organization(SoftDeleteMixin, Base):
         back_populates="organization",
         cascade="all, delete-orphan",
     )
+
+    organization_units = relationship(
+        "OrganizationUnit",
+        back_populates="organization",
+        cascade="all, delete-orphan",
+    )

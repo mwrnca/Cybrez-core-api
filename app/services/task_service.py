@@ -1,8 +1,11 @@
+from uuid import UUID
+
 from sqlalchemy.orm import Session
 
-from app.models.user import User
+from app.models.organization_unit import OrganizationUnit
 from app.models.project import Project
 from app.models.task import Task
+from app.models.user import User
 
 from app.repositories.membership_repository import MembershipRepository
 from app.repositories.task_repository import TaskRepository
@@ -15,8 +18,8 @@ class TaskService:
     @staticmethod
     def _resolve_assignee(
         db: Session,
-        user_public_id,
-        organization_id: int,
+        user_public_id: UUID | None,
+        organization_id: UUID,
     ) -> int | None:
 
         if user_public_id is None:
@@ -47,15 +50,53 @@ class TaskService:
         return user.id
 
     @staticmethod
+    def _resolve_organization_unit(
+        db: Session,
+        unit_public_id: UUID | None,
+        organization_id: UUID,
+    ) -> int | None:
+
+        if unit_public_id is None:
+            return None
+
+        unit = (
+            db.query(OrganizationUnit)
+            .filter(
+                OrganizationUnit.public_id == unit_public_id,
+                OrganizationUnit.deleted_at.is_(None),
+            )
+            .first()
+        )
+
+        if unit is None:
+            raise ValueError("Organization unit not found")
+
+        if unit.organization_id != organization_id:
+            raise ValueError(
+                "Organization unit does not belong to this organization"
+            )
+
+        return unit.id
+
+    @staticmethod
     def create(
         db: Session,
         project: Project,
         data: TaskCreate,
     ):
+
         assignee_id = TaskService._resolve_assignee(
             db,
             data.assignee_id,
             project.organization_id,
+        )
+
+        organization_unit_id = (
+            TaskService._resolve_organization_unit(
+                db,
+                data.organization_unit_id,
+                project.organization_id,
+            )
         )
 
         task = Task(
@@ -65,6 +106,7 @@ class TaskService:
             status=data.status,
             priority=data.priority,
             assignee_id=assignee_id,
+            organization_unit_id=organization_unit_id,
             due_date=data.due_date,
         )
 
@@ -89,10 +131,19 @@ class TaskService:
         task: Task,
         data: TaskUpdate,
     ):
+
         assignee_id = TaskService._resolve_assignee(
             db,
             data.assignee_id,
             task.project.organization_id,
+        )
+
+        organization_unit_id = (
+            TaskService._resolve_organization_unit(
+                db,
+                data.organization_unit_id,
+                task.project.organization_id,
+            )
         )
 
         task.title = data.title
@@ -100,6 +151,7 @@ class TaskService:
         task.status = data.status
         task.priority = data.priority
         task.assignee_id = assignee_id
+        task.organization_unit_id = organization_unit_id
         task.due_date = data.due_date
 
         return TaskRepository.update(

@@ -17,10 +17,10 @@ from app.api.v1.endpoints import (
 )
 
 from app.api.v1.endpoints import search
-
+from app.api.v1.endpoints.organization_units import router as organization_units_router
+from app.api.v1.endpoints.task_workspace import router as task_workspace_router
 
 api_router = APIRouter()
-
 api_router.include_router(auth.router)
 api_router.include_router(users.router)
 api_router.include_router(organization.router)
@@ -35,3 +35,5 @@ api_router.include_router(notification.router)
 api_router.include_router(persona.router)
 api_router.include_router(directory.router)
 api_router.include_router(search.router)
+api_router.include_router(organization_units_router)
+api_router.include_router(task_workspace_router)
